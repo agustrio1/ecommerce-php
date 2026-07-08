@@ -18,14 +18,25 @@ use RuntimeException;
  * lupa password. Tidak tau apa-apa soal HTTP (Request/Response) —
  * itu tugas Controller. Service ini murni orchestration domain logic.
  *
- * PENTING soal performa: pengiriman email (verifikasi & reset password)
- * TIDAK dilakukan secara synchronous di sini. Kirim email lewat SMTP bisa
- * makan waktu beberapa detik (handshake, TLS, auth), dan kalau dilakukan
- * langsung di alur register()/forgotPassword(), user harus nunggu semua
- * itu selesai sebelum dapat response. Sebagai gantinya, token dibuat &
- * disimpan secara sync (cepat, cuma insert DB), lalu pengiriman email
- * dilempar ke proses `php cli` terpisah yang jalan di BACKGROUND lewat
- * exec(... &) — request utama langsung lanjut tanpa menunggu proses itu.
+ * PENTING soal performa & kompatibilitas hosting: pengiriman email
+ * (verifikasi & reset password) MENCOBA dilakukan secara async lewat
+ * proses `php cli` terpisah (exec(... &)) supaya user tidak perlu
+ * menunggu SMTP handshake selesai sebelum dapat response.
+ *
+ * NAMUN banyak shared hosting (cPanel dkk) men-disable exec()/shell_exec()
+ * demi keamanan. Kalau itu terjadi, exec() gagal DIAM-DIAM (tidak
+ * melempar exception), sehingga email tidak pernah terkirim tanpa ada
+ * error yang terlihat — inilah yang menyebabkan "aman di development,
+ * tidak terima email di shared hosting staging".
+ *
+ * Sekarang dispatchAsync() MENDETEKSI dulu apakah exec() benar-benar bisa
+ * dipakai (ada di PHP dan tidak ada di disable_functions). Kalau bisa,
+ * jalur async dipakai seperti biasa. Kalau TIDAK bisa, otomatis fallback
+ * ke pengiriman SYNCHRONOUS di proses yang sama — memanggil command class
+ * yang sama persis (bukan duplikasi logic) secara langsung tanpa exec().
+ * User di shared hosting akan sedikit menunggu SMTP (beberapa detik),
+ * tapi email tetap benar-benar terkirim, alih-alih gagal total tanpa
+ * jejak error.
  */
 class AuthService
 {
@@ -104,10 +115,8 @@ class AuthService
     }
 
     /**
-     * Generate token verifikasi baru dan JADWALKAN pengiriman email
-     * (bukan kirim langsung). $email dan $name dipertahankan di signature
-     * untuk kompatibilitas pemanggil lama, meski proses kirim email yang
-     * sebenarnya mengambil ulang data user dari database di command CLI.
+     * Generate token verifikasi baru dan kirim email (async kalau bisa,
+     * fallback synchronous kalau tidak).
      */
     public function sendVerificationEmail(int $userId, string $email, string $name): void
     {
@@ -120,7 +129,11 @@ class AuthService
         );
         $stmt->execute(['user_id' => $userId, 'token' => $token, 'expires_at' => $expiresAt]);
 
-        $this->dispatchAsync('mail:send-verification', [(string) $userId, $token]);
+        $this->dispatch(
+            'mail:send-verification',
+            [(string) $userId, $token],
+            \App\Core\Console\Commands\MailSendVerificationCommand::class
+        );
     }
 
     /**
@@ -176,8 +189,8 @@ class AuthService
     }
 
     /**
-     * Generate token reset password dan JADWALKAN pengiriman email
-     * (bukan kirim langsung, sama seperti sendVerificationEmail()).
+     * Generate token reset password dan kirim email (async kalau bisa,
+     * fallback synchronous kalau tidak).
      */
     public function forgotPassword(string $email): AuthResult
     {
@@ -196,7 +209,11 @@ class AuthService
         );
         $stmt->execute(['user_id' => $user->id, 'token' => $token, 'expires_at' => $expiresAt]);
 
-        $this->dispatchAsync('mail:send-reset-password', [(string) $user->id, $token]);
+        $this->dispatch(
+            'mail:send-reset-password',
+            [(string) $user->id, $token],
+            \App\Core\Console\Commands\MailSendResetPasswordCommand::class
+        );
 
         return AuthResult::ok('Jika email terdaftar, kami sudah mengirim link reset password.');
     }
@@ -231,26 +248,61 @@ class AuthService
     }
 
     /**
-     * Jalankan command `php cli {command} {args...}` sebagai proses
-     * TERPISAH di background. Tanda "&" di akhir command memastikan shell
-     * tidak menunggu proses itu selesai, sehingga exec() langsung return
-     * dan kode di AuthService bisa lanjut tanpa delay SMTP.
-     *
-     * CATATAN: exec() harus tidak berada dalam disable_functions di php.ini.
-     * Di Termux/php -S bawaan, exec() biasanya aktif secara default.
+     * Cek apakah exec() benar-benar bisa dipakai di environment ini —
+     * baik fungsi PHP-nya ada, MAUPUN tidak diblokir lewat disable_functions
+     * di php.ini (yang umum terjadi di shared hosting).
      */
-    private function dispatchAsync(string $command, array $args = []): void
+    private function execAvailable(): bool
     {
-        $phpBinary = PHP_BINARY;
-        $cliPath   = base_path('cli');
-
-        $parts = [escapeshellcmd($phpBinary), escapeshellarg($cliPath), escapeshellarg($command)];
-        foreach ($args as $arg) {
-            $parts[] = escapeshellarg($arg);
+        if (! function_exists('exec')) {
+            return false;
         }
 
-        $fullCommand = implode(' ', $parts) . ' > /dev/null 2>&1 &';
+        $disabled = array_map('trim', explode(',', (string) ini_get('disable_functions')));
 
-        exec($fullCommand);
+        return ! in_array('exec', $disabled, true);
+    }
+
+    /**
+     * Jalankan command CLI untuk kirim email — ASYNC lewat exec() kalau
+     * environment mendukung, atau SYNCHRONOUS langsung di proses ini
+     * (memanggil command class yang sama, tanpa shell) kalau exec()
+     * diblokir. Kedua jalur memakai logic pengiriman yang PERSIS SAMA
+     * (class command yang sama), jadi tidak ada duplikasi behavior.
+     *
+     * @param class-string $commandClass Command class yang implement
+     *                                   handle(array $args): int
+     */
+    private function dispatch(string $command, array $args, string $commandClass): void
+    {
+        if ($this->execAvailable()) {
+            $phpBinary = PHP_BINARY;
+            $cliPath   = base_path('cli');
+
+            $parts = [escapeshellcmd($phpBinary), escapeshellarg($cliPath), escapeshellarg($command)];
+            foreach ($args as $arg) {
+                $parts[] = escapeshellarg($arg);
+            }
+
+            $fullCommand = implode(' ', $parts) . ' > /dev/null 2>&1 &';
+
+            exec($fullCommand);
+            return;
+        }
+
+        // Fallback: exec() tidak tersedia (umum di shared hosting) —
+        // jalankan command yang sama secara SYNCHRONOUS di proses ini.
+        // User akan menunggu SMTP selesai (beberapa detik), tapi email
+        // benar-benar terkirim alih-alih gagal diam-diam.
+        try {
+            $handler = new $commandClass();
+            $handler->handle($args);
+        } catch (\Throwable $e) {
+            // Jangan sampai kegagalan kirim email menggagalkan seluruh
+            // proses register()/forgotPassword() — user tetap berhasil
+            // register/dapat token, cuma emailnya yang gagal. Catat ke
+            // log server supaya bisa diinvestigasi.
+            error_log('Gagal mengirim email (' . $command . '): ' . $e->getMessage());
+        }
     }
 }
