@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@source "../../resources/views/**/*.php";
+@source "../../src/Modules/**/Presentation/Views/**/*.php";
+
+@theme {
+  --color-primary: #f97316;
+  --color-primary-dark: #ea580c;
+}
+
+/* Scrollbar hide untuk filter kategori horizontal scroll */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+/* Safe area untuk bottom navigation di iPhone */
+.safe-area-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Line clamp utility */
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Prose minimal untuk konten HTML dari rich editor */
+.prose-sm h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; }
+.prose-sm h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+.prose-sm h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+.prose-sm p { margin-bottom: 0.5rem; }
+.prose-sm ul { list-style: disc; padding-left: 1.25rem; margin-bottom: 0.5rem; }
+.prose-sm ol { list-style: decimal; padding-left: 1.25rem; margin-bottom: 0.5rem; }
+.prose-sm blockquote {
+    border-left: 4px solid #f97316;
+    padding-left: 0.75rem;
+    font-style: italic;
+    color: #6b7280;
+    margin: 0.5rem 0;
+}
+.prose-sm a { color: #f97316; text-decoration: underline; }
