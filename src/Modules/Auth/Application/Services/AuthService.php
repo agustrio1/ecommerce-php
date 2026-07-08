@@ -29,14 +29,14 @@ use RuntimeException;
  * error yang terlihat — inilah yang menyebabkan "aman di development,
  * tidak terima email di shared hosting staging".
  *
- * Sekarang dispatchAsync() MENDETEKSI dulu apakah exec() benar-benar bisa
- * dipakai (ada di PHP dan tidak ada di disable_functions). Kalau bisa,
- * jalur async dipakai seperti biasa. Kalau TIDAK bisa, otomatis fallback
- * ke pengiriman SYNCHRONOUS di proses yang sama — memanggil command class
+ * dispatch() MENDETEKSI dulu apakah exec() benar-benar bisa dipakai (ada
+ * di PHP dan tidak ada di disable_functions). Kalau bisa, jalur async
+ * dipakai seperti biasa. Kalau TIDAK bisa, otomatis fallback ke
+ * pengiriman SYNCHRONOUS di proses yang sama — memanggil command class
  * yang sama persis (bukan duplikasi logic) secara langsung tanpa exec().
- * User di shared hosting akan sedikit menunggu SMTP (beberapa detik),
- * tapi email tetap benar-benar terkirim, alih-alih gagal total tanpa
- * jejak error.
+ * User di shared hosting akan sedikit menunggu SMTP/Resend API (beberapa
+ * detik), tapi email tetap benar-benar terkirim, alih-alih gagal total
+ * tanpa jejak error.
  */
 class AuthService
 {
@@ -292,8 +292,8 @@ class AuthService
 
         // Fallback: exec() tidak tersedia (umum di shared hosting) —
         // jalankan command yang sama secara SYNCHRONOUS di proses ini.
-        // User akan menunggu SMTP selesai (beberapa detik), tapi email
-        // benar-benar terkirim alih-alih gagal diam-diam.
+        // User akan menunggu SMTP/Resend selesai (beberapa detik), tapi
+        // email benar-benar terkirim alih-alih gagal diam-diam.
         try {
             $handler = new $commandClass();
             $handler->handle($args);
