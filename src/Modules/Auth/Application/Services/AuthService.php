@@ -250,10 +250,18 @@ class AuthService
     /**
      * Cek apakah exec() benar-benar bisa dipakai di environment ini —
      * baik fungsi PHP-nya ada, MAUPUN tidak diblokir lewat disable_functions
-     * di php.ini (yang umum terjadi di shared hosting).
+     * di php.ini, MAUPUN tidak dipaksa nonaktif lewat MAIL_FORCE_SYNC.
      */
     private function execAvailable(): bool
     {
+        // Override manual: kalau MAIL_FORCE_SYNC=true di .env, selalu
+        // pakai jalur synchronous apa pun kondisi exec(). Berguna untuk
+        // debugging di production ketika proses background via exec()
+        // gagal secara diam-diam tanpa jejak error sama sekali.
+        if (filter_var(env('MAIL_FORCE_SYNC', false), FILTER_VALIDATE_BOOLEAN)) {
+            return false;
+        }
+
         if (! function_exists('exec')) {
             return false;
         }
@@ -266,9 +274,17 @@ class AuthService
     /**
      * Jalankan command CLI untuk kirim email — ASYNC lewat exec() kalau
      * environment mendukung, atau SYNCHRONOUS langsung di proses ini
-     * (memanggil command class yang sama, tanpa shell) kalau exec()
-     * diblokir. Kedua jalur memakai logic pengiriman yang PERSIS SAMA
-     * (class command yang sama), jadi tidak ada duplikasi behavior.
+     * kalau exec() diblokir/dipaksa off.
+     *
+     * PENTING (fix "email tidak terkirim TANPA jejak error sama sekali"):
+     * sebelumnya output proses background dibuang total ke /dev/null.
+     * Kalau proses `php cli mail:send-...` itu gagal dieksekusi (path PHP
+     * binary salah, file cli tidak executable, working directory salah,
+     * dsb), TIDAK ADA JEJAK APAPUN yang tersimpan — persis gejala di
+     * production: mail-error.log kosong padahal email tidak terkirim.
+     * Sekarang output (stdout+stderr) dari proses background ditulis ke
+     * storage/logs/mail-dispatch.log supaya kegagalan proses spawn itu
+     * sendiri (bukan cuma kegagalan pengiriman emailnya) bisa diketahui.
      *
      * @param class-string $commandClass Command class yang implement
      *                                   handle(array $args): int
@@ -278,30 +294,28 @@ class AuthService
         if ($this->execAvailable()) {
             $phpBinary = PHP_BINARY;
             $cliPath   = base_path('cli');
+            $logPath   = base_path('storage/logs/mail-dispatch.log');
 
             $parts = [escapeshellcmd($phpBinary), escapeshellarg($cliPath), escapeshellarg($command)];
             foreach ($args as $arg) {
                 $parts[] = escapeshellarg($arg);
             }
 
-            $fullCommand = implode(' ', $parts) . ' > /dev/null 2>&1 &';
+            $fullCommand = implode(' ', $parts)
+                . ' >> ' . escapeshellarg($logPath) . ' 2>&1 &';
 
             exec($fullCommand);
             return;
         }
 
-        // Fallback: exec() tidak tersedia (umum di shared hosting) —
-        // jalankan command yang sama secara SYNCHRONOUS di proses ini.
-        // User akan menunggu SMTP/Resend selesai (beberapa detik), tapi
-        // email benar-benar terkirim alih-alih gagal diam-diam.
+        // Fallback: exec() tidak tersedia/dipaksa off — jalankan command
+        // yang sama secara SYNCHRONOUS di proses ini. Kalau ini gagal,
+        // exception-nya SUDAH ditulis ke storage/logs/mail-error.log oleh
+        // Mailer::logError() sebelum di-throw, jadi jejaknya pasti ada.
         try {
             $handler = new $commandClass();
             $handler->handle($args);
         } catch (\Throwable $e) {
-            // Jangan sampai kegagalan kirim email menggagalkan seluruh
-            // proses register()/forgotPassword() — user tetap berhasil
-            // register/dapat token, cuma emailnya yang gagal. Catat ke
-            // log server supaya bisa diinvestigasi.
             error_log('Gagal mengirim email (' . $command . '): ' . $e->getMessage());
         }
     }
