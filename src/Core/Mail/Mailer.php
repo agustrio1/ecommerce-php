@@ -6,7 +6,6 @@ namespace App\Core\Mail;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception as PHPMailerException;
-use Resend;
 use RuntimeException;
 
 /**
@@ -16,14 +15,20 @@ use RuntimeException;
  *   - 'log'    : tidak benar-benar mengirim, hanya ditulis ke
  *                storage/logs/mail.log — untuk development.
  *   - 'smtp'   : kirim via PHPMailer + SMTP (butuh port 587/465 terbuka
- *                di server — sering diblokir shared hosting).
- *   - 'resend' : kirim via Resend PHP SDK resmi (composer require
- *                resend/resend-php), sesuai dokumentasi resmi di
- *                https://resend.com/docs/send-with-php — cuma butuh
- *                port 443 (HTTPS) yang hampir selalu terbuka di semua
- *                hosting.
+ *                di server — sering diblokir shared hosting, DAN jangan
+ *                pernah dipakai untuk kirim lewat Resend — Resend hanya
+ *                didukung lewat HTTP API/SMTP relay dengan kredensial
+ *                khusus, bukan email pribadi seperti Gmail).
+ *   - 'resend' : kirim via Resend HTTP API langsung (curl), sesuai pola
+ *                yang sudah terbukti berjalan di project lain. Cuma
+ *                butuh port 443 (HTTPS) yang hampir selalu terbuka di
+ *                semua hosting.
  *
- * Driver ditentukan dari config('mail')['driver'].
+ * Driver ditentukan dari config('mail')['driver'] — WAJIB diset
+ * MAIL_DRIVER=resend di .env supaya driver ini benar-benar dipakai.
+ * Kalau .env masih MAIL_DRIVER=smtp, method sendViaResend() di bawah
+ * TIDAK AKAN PERNAH terpanggil sama sekali, sekalipun RESEND_API_KEY
+ * sudah diisi dengan benar.
  */
 class Mailer
 {
@@ -46,19 +51,8 @@ class Mailer
     }
 
     /**
-     * Kirim via Resend PHP SDK resmi, sesuai contoh di dokumentasi:
-     * https://resend.com/docs/send-with-php
-     *
-     *   $resend = Resend::client($apiKey);
-     *   $resend->emails->send([
-     *       'from'    => '...',
-     *       'to'      => ['...'],
-     *       'subject' => '...',
-     *       'html'    => '...',
-     *   ]);
-     *
-     * Butuh `composer require resend/resend-php` sebelum driver ini bisa
-     * dipakai.
+     * Kirim via Resend HTTP API (curl langsung), persis pola yang sudah
+     * terbukti berjalan di project lain (EmailService.php helpdesk).
      */
     private function sendViaResend(string $to, string $subject, string $html, ?string $toName = null): bool
     {
@@ -72,11 +66,6 @@ class Mailer
             $fromAddress = $_ENV['MAIL_FROM_ADDRESS'] ?? getenv('MAIL_FROM_ADDRESS') ?: '';
         }
 
-        $fromName = $this->config['resend']['from_name'] ?? ($this->config['from']['name'] ?? '');
-        if ($fromName === '') {
-            $fromName = $_ENV['MAIL_FROM_NAME'] ?? getenv('MAIL_FROM_NAME') ?: '';
-        }
-
         if ($apiKey === '') {
             $this->logError($to, $subject, 'Resend API key belum dikonfigurasi (config maupun $_ENV kosong).');
             throw new RuntimeException('Resend API key belum dikonfigurasi. Isi RESEND_API_KEY di .env.');
@@ -87,29 +76,46 @@ class Mailer
             throw new RuntimeException('Alamat pengirim Resend belum dikonfigurasi.');
         }
 
-        if (! class_exists(Resend::class)) {
-            $this->logError($to, $subject, 'SDK resend/resend-php belum ter-install.');
-            throw new RuntimeException('SDK Resend belum ter-install. Jalankan: composer require resend/resend-php');
-        }
-
-        $from = $fromName !== '' ? "{$fromName} <{$fromAddress}>" : $fromAddress;
         $subjectClean = trim(preg_replace('/\s+/', ' ', $subject));
 
-        try {
-            $resend = Resend::client($apiKey);
+        $payload = [
+            'from'    => $fromAddress,
+            'to'      => [$to],
+            'subject' => $subjectClean,
+            'html'    => $html,
+        ];
 
-            $resend->emails->send([
-                'from'    => $from,
-                'to'      => [$to],
-                'subject' => $subjectClean,
-                'html'    => $html,
-            ]);
+        $ch = curl_init('https://api.resend.com/emails');
 
-            return true;
-        } catch (\Throwable $e) {
-            $this->logError($to, $subject, 'Resend error: ' . $e->getMessage());
-            throw new RuntimeException("Gagal mengirim email ke {$to} via Resend: " . $e->getMessage(), 0, $e);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                'Authorization: Bearer ' . $apiKey,
+                'Content-Type: application/json',
+            ],
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_TIMEOUT    => 20,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr  = curl_error($ch);
+
+        if ($response === false) {
+            curl_close($ch);
+            $this->logError($to, $subject, 'Resend cURL error: ' . $curlErr);
+            throw new RuntimeException('Gagal mengirim email ke ' . $to . ' via Resend: ' . $curlErr);
         }
+
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            $this->logError($to, $subject, "Resend FAIL {$httpCode}: {$response}");
+            throw new RuntimeException("Gagal mengirim email ke {$to} via Resend (HTTP {$httpCode}): {$response}");
+        }
+
+        return true;
     }
 
     /**
