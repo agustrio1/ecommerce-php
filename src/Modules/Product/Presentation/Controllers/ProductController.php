@@ -38,7 +38,6 @@ class ProductController
             'status' => $request->query('status'),
         ]);
 
-        // Ambil primary image untuk semua produk (anti N+1)
         $productImages = $this->productService->getPrimaryImagesByProducts($result['data']);
 
         return Response::make(view('Product::index', [
@@ -85,15 +84,13 @@ class ProductController
         return Response::make(view('Product::edit', [
             'product'             => $product,
             'categories'          => $this->categoryService->getAll(),
-            'selectedCategoryIds' => array_column(
-                $this->productService->getCategoryIds($product->id),
-                'id'
-            ),
+            // getCategoryIds() sekarang sudah return array of int (lihat
+            // fix di ProductService), jadi tidak perlu array_column lagi
+            // di sini karena sudah bukan array asosiatif.
+            'selectedCategoryIds' => $this->productService->getCategoryIds($product->id),
             'attributes' => $this->attributeService->getAllWithValues(),
             'variants'   => $this->productService->getVariants($product->id),
             'images'     => $this->productService->getImages($product->id),
-            // Ambil dari object $product — bukan dari $request
-            // $request di GET request kosong, data SEO ada di DB
         ]));
     }
 
@@ -127,9 +124,26 @@ class ProductController
         return Response::redirect('/admin/products');
     }
 
+    /**
+     * Update stok satu varian via HTMX (inline edit di halaman edit produk).
+     *
+     * FIX PENTING: request ini dikirim sebagai method PATCH (lihat
+     * hx-patch di view Product::edit). PHP secara bawaan HANYA mengisi
+     * $_POST otomatis untuk request method POST — untuk PATCH/PUT/DELETE,
+     * $_POST selalu kosong walau body-nya terkirim. Kalau Request::input()
+     * di framework ini hanya membaca dari $_POST (pola yang sama seperti
+     * beberapa controller lain di project ini yang butuh parsing manual),
+     * maka $request->input('stock') SELALU mengembalikan null untuk
+     * request PATCH ini, dan (int) null menjadi 0 — inilah sebabnya stok
+     * varian selalu berubah jadi 0 setiap kali diedit lewat form ini.
+     *
+     * Sekarang body PATCH di-parse manual dari php://input, dengan
+     * fallback ke $request->input() untuk jaga-jaga kalau framework-nya
+     * ternyata sudah menangani ini dengan benar.
+     */
     public function updateVariantStock(Request $request, string $variantId): Response
     {
-        $stock = (int) $request->input('stock');
+        $stock = $this->readStockFromRequest($request);
 
         try {
             $this->productService->updateVariantStock((int) $variantId, $stock);
@@ -206,6 +220,36 @@ class ProductController
     // ===================== PRIVATE =====================
 
     /**
+     * Baca nilai 'stock' dari body PATCH secara manual, karena $_POST
+     * tidak otomatis terisi PHP untuk method selain POST.
+     */
+    private function readStockFromRequest(Request $request): int
+    {
+        $raw = file_get_contents('php://input');
+
+        if ($raw !== false && $raw !== '') {
+            $contentType = $request->header('Content-Type', '');
+
+            if (str_contains($contentType, 'application/json')) {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded) && isset($decoded['stock'])) {
+                    return (int) $decoded['stock'];
+                }
+            } else {
+                // Default HTMX: application/x-www-form-urlencoded
+                parse_str($raw, $parsed);
+                if (isset($parsed['stock'])) {
+                    return (int) $parsed['stock'];
+                }
+            }
+        }
+
+        // Fallback terakhir, kalau-kalau Request::input() ternyata sudah
+        // menangani body PATCH dengan benar di sisi framework.
+        return (int) $request->input('stock', 0);
+    }
+
+    /**
      * Ekstrak & normalisasi data form produk.
      * Dipakai oleh store() dan update() — satu sumber kebenaran.
      */
@@ -248,8 +292,6 @@ class ProductController
             'stock'             => (int) $request->input('stock', 0),
             'selected_attribute_values' => $selectedAttributeValues,
 
-            // SEO fields — diambil dari form input saat POST
-            // Saat edit, nilai awal form diisi dari $product->metaTitle dst (di view)
             'meta_title'        => $request->input('meta_title') ?: null,
             'meta_description'  => $request->input('meta_description') ?: null,
             'meta_keywords'     => $request->input('meta_keywords') ?: null,

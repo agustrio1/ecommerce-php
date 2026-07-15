@@ -88,8 +88,7 @@ class MysqlProductRepository implements ProductRepositoryInterface
             $where[] = 'id IN (SELECT product_id FROM product_categories WHERE category_id = :category_id)';
             $params['category_id'] = $filters['category_id'];
         }
-        
-        // Filter multi-kategori (untuk halaman kategori + semua sub-kategorinya)
+
         if (! empty($filters['category_ids']) && is_array($filters['category_ids'])) {
             $placeholders = implode(',', array_fill(0, count($filters['category_ids']), '?'));
             $where[] = "EXISTS (SELECT 1 FROM product_categories pc WHERE pc.product_id = p.id AND pc.category_id IN ({$placeholders}))";
@@ -124,9 +123,23 @@ class MysqlProductRepository implements ProductRepositoryInterface
 
     public function create(array $data): Product
     {
+        // FIX: kolom meta_title/meta_description/meta_keywords sebelumnya
+        // tidak ada di query INSERT sama sekali, jadi walau service sudah
+        // mengirim nilainya, tetap tidak akan pernah tersimpan.
         $stmt = $this->pdo->prepare(
-            'INSERT INTO products (name, slug, description, short_description, sku, price, compare_price, cost_price, weight, length, width, height, has_variants, status, published_at, created_at, updated_at)
-             VALUES (:name, :slug, :description, :short_description, :sku, :price, :compare_price, :cost_price, :weight, :length, :width, :height, :has_variants, :status, :published_at, NOW(), NOW())'
+            'INSERT INTO products (
+                name, slug, description, short_description, sku,
+                price, compare_price, cost_price, weight,
+                length, width, height,
+                meta_title, meta_description, meta_keywords,
+                has_variants, status, published_at, created_at, updated_at
+            ) VALUES (
+                :name, :slug, :description, :short_description, :sku,
+                :price, :compare_price, :cost_price, :weight,
+                :length, :width, :height,
+                :meta_title, :meta_description, :meta_keywords,
+                :has_variants, :status, :published_at, NOW(), NOW()
+            )'
         );
 
         $stmt->execute([
@@ -142,6 +155,9 @@ class MysqlProductRepository implements ProductRepositoryInterface
             'length'            => (int) ($data['length'] ?? 0),
             'width'             => (int) ($data['width'] ?? 0),
             'height'            => (int) ($data['height'] ?? 0),
+            'meta_title'        => $data['meta_title'] ?? null,
+            'meta_description'  => $data['meta_description'] ?? null,
+            'meta_keywords'     => $data['meta_keywords'] ?? null,
             'has_variants'      => $data['has_variants'] ?? 0,
             'status'            => $data['status'] ?? 'draft',
             'published_at'      => ($data['status'] ?? '') === 'published' ? date('Y-m-d H:i:s') : null,
@@ -155,10 +171,15 @@ class MysqlProductRepository implements ProductRepositoryInterface
         $fields = [];
         $params = ['id' => $id];
 
+        // FIX: length, width, height sudah ada sebelumnya di whitelist ini
+        // (jadi sebenarnya SUDAH didukung repository), tapi meta_title/
+        // meta_description/meta_keywords belum pernah ada — ditambahkan
+        // di sini.
         $allowedFields = [
             'name', 'slug', 'description', 'short_description',
             'sku', 'price', 'compare_price', 'cost_price',
             'weight', 'length', 'width', 'height',
+            'meta_title', 'meta_description', 'meta_keywords',
             'has_variants', 'status'
         ];
 
@@ -183,7 +204,6 @@ class MysqlProductRepository implements ProductRepositoryInterface
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute($params);
     }
-
 
     public function delete(int $id): void
     {
@@ -334,11 +354,8 @@ class MysqlProductRepository implements ProductRepositoryInterface
         $stmt = $this->pdo->prepare('UPDATE product_images SET is_primary = 0 WHERE product_id = :product_id');
         $stmt->execute(['product_id' => $productId]);
     }
-    
+
     /**
-     * Ambil primary image untuk banyak produk sekaligus (hindari N+1 query).
-     * Return: array dengan key = product_id, value = path image
-     *
      * @param int[] $productIds
      * @return array<int, string>
      */
@@ -360,7 +377,6 @@ class MysqlProductRepository implements ProductRepositoryInterface
 
         $result = [];
         foreach ($stmt->fetchAll() as $row) {
-            // Simpan hanya satu image per produk (yang pertama ditemukan)
             if (! isset($result[(int) $row['product_id']])) {
                 $result[(int) $row['product_id']] = $row['path'];
             }

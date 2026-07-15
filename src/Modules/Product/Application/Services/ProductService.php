@@ -37,8 +37,6 @@ class ProductService
         }
 
         if (! empty($filters['search'])) {
-            // PENTING: PDO native prepare tidak mendukung named placeholder
-            // yang sama dipakai lebih dari sekali dalam satu query.
             $where[] = '(p.name LIKE :search1 OR p.sku LIKE :search2 OR p.short_description LIKE :search3)';
             $searchTerm = '%' . $filters['search'] . '%';
             $params['search1'] = $searchTerm;
@@ -50,14 +48,6 @@ class ProductService
             $where[] = 'EXISTS (SELECT 1 FROM product_categories pc WHERE pc.product_id = p.id AND pc.category_id = :category_id)';
             $params['category_id'] = $filters['category_id'];
         }
-
-        // CATATAN: klausa untuk category_ids (multi-kategori) SENGAJA TIDAK
-        // ditambahkan di sini. Ia dibangun terpisah di bawah (blok positional
-        // params) supaya tidak duplikat dengan klausa yang di-generate ulang
-        // di situ. Sebelumnya klausa ini ditambahkan di sini JUGA lalu
-        // ditambahkan lagi di blok bawah, menyebabkan jumlah placeholder '?'
-        // dobel sementara $catParams cuma disuplai sekali -> PDOException
-        // "Invalid parameter number".
 
         if (! empty($filters['min_price'])) {
             $where[]             = 'p.price >= :min_price';
@@ -86,17 +76,13 @@ class ProductService
 
         $offset = ($page - 1) * $perPage;
 
-        // Untuk category_ids, kita pakai positional params (?) yang digabung
-        // dengan named params (dikonversi ke '?' juga) karena PDO tidak bisa
-        // campur named + positional dalam satu execute().
         if (! empty($filters['category_ids']) && is_array($filters['category_ids'])) {
             $phs      = implode(',', array_fill(0, count($filters['category_ids']), '?'));
             $catWhere = "EXISTS (SELECT 1 FROM product_categories pc WHERE pc.product_id = p.id AND pc.category_id IN ({$phs}))";
 
-            $finalWhere   = $where; // $where di sini TIDAK mengandung klausa category_ids (lihat catatan di atas)
+            $finalWhere   = $where;
             $finalWhere[] = $catWhere;
 
-            // Konversi semua named params jadi positional supaya bisa dicampur
             $positionalParams = [];
             $positionalWhere  = [];
 
@@ -111,21 +97,17 @@ class ProductService
 
             $positionalSql = implode(' AND ', $positionalWhere);
 
-            // Tambahkan category_ids values (posisinya di akhir, sesuai urutan '?' pada $catWhere)
             $catParams = array_values($filters['category_ids']);
 
-            // Count
             $countSql  = "SELECT COUNT(*) FROM products p WHERE {$positionalSql}";
             $countStmt = $this->pdo->prepare($countSql);
             $countStmt->execute(array_merge($positionalParams, $catParams));
             $total = (int) $countStmt->fetchColumn();
 
-            // Data
             $dataSql  = "SELECT p.* FROM products p WHERE {$positionalSql} ORDER BY {$orderBy} LIMIT ? OFFSET ?";
             $dataStmt = $this->pdo->prepare($dataSql);
             $dataStmt->execute(array_merge($positionalParams, $catParams, [$perPage, $offset]));
         } else {
-            // Semua named params, lebih simpel
             $countStmt = $this->pdo->prepare("SELECT COUNT(*) FROM products p WHERE {$whereSql}");
             $countStmt->execute($params);
             $total = (int) $countStmt->fetchColumn();
@@ -179,9 +161,6 @@ class ProductService
     }
 
     /**
-     * Ambil primary image untuk array of Product objects.
-     * Return: array dengan key = product_id, value = URL siap pakai
-     *
      * @param Product[] $products
      * @return array<int, string>
      */
@@ -203,9 +182,24 @@ class ProductService
         return $urls;
     }
 
+    /**
+     * Ambil kategori TERPILIH untuk sebuah produk, dengan ID sudah
+     * dinormalisasi jadi integer.
+     *
+     * FIX: PDO secara default mengembalikan kolom numerik sebagai STRING
+     * (mis. "3", bukan 3). Kalau caller (view edit produk) membandingkan
+     * ID ini secara strict (===/in_array(..., true)) dengan ID dari
+     * entity Product yang bertipe int asli, perbandingan itu SELALU
+     * gagal walau datanya sama — inilah sebabnya checkbox kategori
+     * terlihat kosong/tidak tercentang di halaman edit padahal kategori
+     * sebenarnya sudah tersimpan dengan benar di database.
+     */
     public function getCategoryIds(int $productId): array
     {
-        return $this->products->getCategoryIds($productId);
+        return array_map(
+            fn ($row) => (int) $row['id'],
+            $this->products->getCategoryIds($productId)
+        );
     }
 
     public function getAllAttributesWithValues(): array
@@ -234,6 +228,16 @@ class ProductService
             'compare_price'     => $data['compare_price'] ?? null,
             'cost_price'        => $data['cost_price'] ?? null,
             'weight'            => $data['weight'] ?? null,
+            // FIX: sebelumnya length/width/height dan meta fields SAMA
+            // SEKALI TIDAK dikirim ke repository, sehingga produk baru
+            // selalu tersimpan dengan dimensi 0 dan meta kosong meski
+            // sudah diisi di form.
+            'length'            => (int) ($data['length'] ?? 0),
+            'width'             => (int) ($data['width'] ?? 0),
+            'height'            => (int) ($data['height'] ?? 0),
+            'meta_title'        => $data['meta_title'] ?? null,
+            'meta_description'  => $data['meta_description'] ?? null,
+            'meta_keywords'     => $data['meta_keywords'] ?? null,
             'has_variants'      => $hasVariants ? 1 : 0,
             'status'            => $data['status'] ?? 'draft',
         ]);
@@ -269,6 +273,16 @@ class ProductService
             'cost_price'        => $data['cost_price'] ?? null,
             'weight'            => $data['weight'] ?? null,
             'status'            => $data['status'] ?? $existing->status,
+            // FIX: field-field ini sebelumnya tidak pernah masuk ke
+            // $updateData sama sekali, jadi tidak pernah ter-update ke
+            // database walau diisi/diubah di form edit — makanya setiap
+            // dibuka lagi selalu tampil kosong/0.
+            'length'            => (int) ($data['length'] ?? 0),
+            'width'             => (int) ($data['width'] ?? 0),
+            'height'            => (int) ($data['height'] ?? 0),
+            'meta_title'        => $data['meta_title'] ?? null,
+            'meta_description'  => $data['meta_description'] ?? null,
+            'meta_keywords'     => $data['meta_keywords'] ?? null,
         ];
 
         if ($data['name'] !== $existing->name) {
@@ -284,6 +298,19 @@ class ProductService
 
         if (isset($data['category_ids'])) {
             $this->products->syncCategories($id, $data['category_ids']);
+        }
+
+        // Untuk produk TANPA varian, form edit punya 1 input 'stock'
+        // tunggal. Sebelumnya nilai ini diterima di extractProductData()
+        // tapi tidak pernah dipakai di sini sama sekali — stok produk
+        // non-varian jadi tidak bisa diubah lewat form edit utama.
+        if (! $existing->hasVariants && isset($data['stock'])) {
+            $variants = $this->products->getVariantsRaw($id);
+            $defaultVariant = $variants[0] ?? null;
+
+            if ($defaultVariant) {
+                $this->products->updateVariantStock((int) $defaultVariant['id'], (int) $data['stock']);
+            }
         }
     }
 
@@ -310,13 +337,10 @@ class ProductService
 
         $this->products->updateVariantStock($variantId, $stock);
     }
-    
+
     /**
-     * Inject flash sale prices ke array of products.
-     * Dipakai di home, listing, category page supaya harga konsisten.
-     *
      * @param Product[] $products
-     * @return array<int, array> key = product_id, value = flash sale info
+     * @return array<int, array>
      */
     public function getFlashSalePrices(array $products): array
     {
