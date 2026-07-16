@@ -8,17 +8,20 @@ use App\Core\Exceptions\ValidationException;
 use App\Core\Http\Session;
 use App\Modules\Cart\Domain\Entities\CartItem;
 use App\Modules\Cart\Infrastructure\Persistence\MysqlCartRepository;
+use App\Modules\Product\Infrastructure\Persistence\MysqlProductVariantRepository;
 use PDO;
 
 class CartService
 {
     private MysqlCartRepository $cartRepo;
+    private MysqlProductVariantRepository $variantRepo;
     private PDO $pdo;
 
     public function __construct()
     {
-        $this->cartRepo = new MysqlCartRepository();
-        $this->pdo = db();
+        $this->cartRepo    = new MysqlCartRepository();
+        $this->variantRepo = new MysqlProductVariantRepository();
+        $this->pdo         = db();
     }
 
     /**
@@ -115,6 +118,36 @@ class CartService
         }
 
         return $info;
+    }
+
+    /**
+     * Dipakai controller saat user pilih attribute (warna, ukuran, dst)
+     * di halaman produk lalu klik "+ Keranjang" / "Beli Sekarang".
+     *
+     * Resolve dulu kombinasi attribute_value_id yang dipilih user ke
+     * variant_id yang cocok lewat tabel pivot
+     * `product_variant_attribute_values`, baru delegasikan ke addItem()
+     * yang sudah ada (biar validasi stok, flash sale, dll tetap satu jalur).
+     *
+     * @param int[] $selectedAttributeValueIds contoh: [warna_id, ukuran_id]
+     */
+    public function addItemByAttributes(int $productId, array $selectedAttributeValueIds, int $quantity = 1): void
+    {
+        if (empty($selectedAttributeValueIds)) {
+            throw new ValidationException(['variant' => 'Silakan pilih varian produk terlebih dahulu.']);
+        }
+
+        // Pastikan semua ID berupa integer, hindari masalah tipe data
+        // dari input frontend (string/JSON) yang bisa bikin query pivot gagal match.
+        $selectedAttributeValueIds = array_map('intval', $selectedAttributeValueIds);
+
+        $variant = $this->variantRepo->findVariantByAttributeValues($productId, $selectedAttributeValueIds);
+
+        if ($variant === null) {
+            throw new ValidationException(['variant' => 'Varian produk tidak ditemukan.']);
+        }
+
+        $this->addItem($productId, (int) $variant['id'], $quantity);
     }
 
     /**
