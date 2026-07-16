@@ -125,10 +125,26 @@ class CartController
         return Response::json(['count' => $this->cartService->countItems()]);
     }
 
+    /**
+     * Parse body JSON kalau Content-Type-nya application/json.
+     *
+     * FIX: sebelumnya method ini panggil file_get_contents('php://input')
+     * secara manual sendiri, PADAHAL Request::json() sudah punya logic
+     * yang sama dan bahkan meng-cache hasilnya ($jsonBody) supaya
+     * php://input tidak dibaca berkali-kali. Sekarang didelegasikan ke
+     * $request->json() untuk hindari duplikasi & potensi stream yang
+     * sudah "habis" kebaca di tempat lain.
+     *
+     * Root cause 422 sebelumnya BUKAN di sini, tapi di Request::header()
+     * yang salah baca Content-Type (lihat fix di Request.php) — akibatnya
+     * str_contains($request->header('Content-Type', ''), 'application/json')
+     * selalu false walau body memang JSON, jadi method ini selalu return []
+     * dan product_id/variant_id jatuh ke 0 lewat fallback input().
+     */
     private function parseBody(Request $request): array
     {
-        if (str_contains($request->header('Content-Type', ''), 'application/json')) {
-            return json_decode(file_get_contents('php://input'), true) ?? [];
+        if ($request->isJsonRequest()) {
+            return $request->json();
         }
 
         return [];
