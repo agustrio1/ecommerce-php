@@ -14,6 +14,17 @@ if (file_exists($envPath)) {
     $dotenv->load();
 }
 
+// DEBUG SEMENTARA — hapus setelah ketauan
+$debugLog = dirname(__DIR__) . '/storage/logs/debug.log';
+$debugMsg = sprintf(
+    "[%s] ENV_PATH=%s | EXISTS=%s | DB_DATABASE=%s\n",
+    date('Y-m-d H:i:s'),
+    $envPath,
+    file_exists($envPath) ? 'YA' : 'TIDAK',
+    env('DB_DATABASE', 'FALLBACK_ecommerce_php')
+);
+@file_put_contents($debugLog, $debugMsg, FILE_APPEND);
+
 // Error reporting sesuai APP_DEBUG
 if (env('APP_DEBUG', false)) {
     ini_set('display_errors', '1');
