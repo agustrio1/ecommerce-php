@@ -111,22 +111,65 @@ foreach ($banners as $banner) {
 
 <!-- ===== KATEGORI IKON ===== -->
 <?php if (! empty($categories)): ?>
+<?php
+/**
+ * Pilih ikon SVG yang sesuai dengan nama kategori, supaya tidak semua
+ * kategori tanpa foto jatuh ke satu ikon generik yang sama (kotak grid
+ * 2x2) — itu yang bikin tampilan terkesan template kosong/asal-jadi.
+ * Cocokkan berdasarkan kata kunci di nama kategori (case-insensitive),
+ * dengan fallback ikon "tag" generik kalau tidak ada yang cocok.
+ */
+function categoryIconPath(string $name): string
+{
+    $key = strtolower($name);
+
+    return match (true) {
+        str_contains($key, 'tas') =>
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7V6a4 4 0 00-8 0v1M5 7h14l-1.2 12.1a2 2 0 01-2 1.9H8.2a2 2 0 01-2-1.9L5 7z"/>',
+        str_contains($key, 'pakaian') || str_contains($key, 'baju') || str_contains($key, 'kaos') =>
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 4L4.5 6.5 6 10h2v10h8V10h2l1.5-3.5L16 4l-2 2h-4L8 4z"/>',
+        str_contains($key, 'celana') =>
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 3h9l.8 8-1 9h-2.6l-.7-8-.7 8H9.9l-1-9 .6-8z"/>',
+        str_contains($key, 'jam') =>
+            '<circle cx="12" cy="13" r="7" stroke-width="1.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 10v3l2 2M9.5 3h5"/>',
+        str_contains($key, 'ikat') || str_contains($key, 'pinggang') || str_contains($key, 'sabuk') =>
+            '<rect x="3" y="10" width="18" height="4" rx="1" stroke-width="1.5"/><circle cx="12" cy="12" r="1.3" stroke-width="1.5" fill="currentColor"/>',
+        str_contains($key, 'sepatu') =>
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 17.5h17a1 1 0 001-1c0-1.8-1.8-2.8-3.7-3.3-1.8-.5-2.8-1.4-3.6-2.7-.5-.8-1.1-1.5-2.1-1.5H8a1 1 0 00-1 1v3.3L3 14.5v3z"/>',
+        default =>
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>',
+    };
+}
+
+// Variasi warna background per kategori supaya tidak semua oranye monoton.
+$categoryColors = [
+    'bg-orange-50 text-orange-500',
+    'bg-sky-50 text-sky-500',
+    'bg-emerald-50 text-emerald-500',
+    'bg-rose-50 text-rose-500',
+    'bg-violet-50 text-violet-500',
+    'bg-amber-50 text-amber-600',
+    'bg-teal-50 text-teal-500',
+    'bg-fuchsia-50 text-fuchsia-500',
+];
+?>
 <div class="py-4">
     <div class="flex items-center justify-between mb-3">
         <h2 class="font-bold text-gray-900">Kategori</h2>
         <a href="/kategori" class="text-sm text-orange-600 hover:underline">Lihat semua</a>
     </div>
     <div class="grid grid-cols-4 sm:grid-cols-6 gap-3">
-        <?php foreach (array_slice($categories, 0, 8) as $category): ?>
+        <?php foreach (array_slice($categories, 0, 8) as $i => $category): ?>
+            <?php $colorClass = $categoryColors[$i % count($categoryColors)]; ?>
             <a href="/produk?kategori=<?= $category->id ?>"
                 class="flex flex-col items-center gap-2 group">
-                <div class="w-14 h-14 sm:w-16 sm:h-16 bg-orange-50 rounded-2xl flex items-center justify-center group-hover:bg-orange-100 transition">
+                <div class="w-14 h-14 sm:w-16 sm:h-16 <?= $colorClass ?> rounded-2xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
                     <?php if ($category->image): ?>
                         <img src="/storage/<?= e($category->image) ?>" alt="<?= e($category->name) ?>"
                             class="w-8 h-8 object-cover rounded-lg">
                     <?php else: ?>
-                        <svg class="w-7 h-7 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <?= categoryIconPath($category->name) ?>
                         </svg>
                     <?php endif; ?>
                 </div>
