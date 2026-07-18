@@ -29,51 +29,73 @@ $bannerCount = count($banners);
                     style="background-color: <?= e($banner['bg_color']) ?>">
 
                     <?php if ($banner['image_path']): ?>
+                        <!-- Banner dengan gambar: teks & tombol promosi SUDAH jadi
+                             bagian dari desain gambar itu sendiri, jadi tidak perlu
+                             overlay teks lagi di sini — cukup tampilkan gambarnya
+                             utuh (object-contain, tidak dipotong). -->
                         <img src="/storage/<?= e($banner['image_path']) ?>"
                             alt="<?= e($banner['title'] ?? '') ?>"
                             class="absolute inset-0 w-full h-full object-contain">
-                        <!-- Overlay gelap tipis biar teks tetap kebaca di atas gambar,
-                             tanpa menutupi area letterbox (bg_color) di sisi gambar -->
-                        <div class="absolute inset-0 bg-black/20"></div>
-                    <?php endif; ?>
 
-                    <div class="text-center text-white z-10 px-6 relative">
-                        <?php if ($banner['subtitle']): ?>
-                            <p class="text-xs sm:text-sm font-medium opacity-80 mb-1"><?= e($banner['subtitle']) ?></p>
-                        <?php endif; ?>
-                        <h2 class="text-lg sm:text-2xl md:text-3xl font-bold mb-2 leading-tight"><?= e($banner['title']) ?></h2>
                         <?php if ($banner['button_text'] && $banner['button_url']): ?>
+                            <!-- Link tetap perlu ada supaya banner tetap bisa
+                                 diklik/ditap (untuk navigasi), tapi dibuat transparan
+                                 dan menutup seluruh area gambar — bukan kotak putih
+                                 di tengah yang menutupi tombol asli di gambar. -->
                             <a href="<?= e($banner['button_url']) ?>"
-                                class="inline-block px-4 py-1.5 bg-white text-gray-900 text-xs sm:text-sm font-semibold rounded-full hover:bg-gray-100 transition">
-                                <?= e($banner['button_text']) ?>
+                                class="absolute inset-0 z-10"
+                                aria-label="<?= e($banner['button_text']) ?>">
                             </a>
                         <?php endif; ?>
-                    </div>
+                    <?php else: ?>
+                        <!-- Banner fallback TANPA gambar: di sinilah overlay teks
+                             & tombol dari kode dipakai, karena tidak ada gambar
+                             yang membawa teks/tombol sendiri. -->
+                        <div class="text-center text-white z-10 px-[4%] relative max-w-full">
+                            <?php if ($banner['subtitle']): ?>
+                                <p class="font-medium opacity-80 mb-1"
+                                    style="font-size: clamp(0.65rem, 2.2vw, 0.95rem);">
+                                    <?= e($banner['subtitle']) ?>
+                                </p>
+                            <?php endif; ?>
+                            <h2 class="font-bold mb-2 leading-tight"
+                                style="font-size: clamp(0.95rem, 4.5vw, 2rem);">
+                                <?= e($banner['title']) ?>
+                            </h2>
+                            <?php if ($banner['button_text'] && $banner['button_url']): ?>
+                                <a href="<?= e($banner['button_url']) ?>"
+                                    class="inline-block bg-white text-gray-900 font-semibold rounded-full hover:bg-gray-100 transition"
+                                    style="font-size: clamp(0.65rem, 2vw, 0.9rem); padding: clamp(0.3rem, 1.2vw, 0.5rem) clamp(0.9rem, 3vw, 1.5rem);">
+                                    <?= e($banner['button_text']) ?>
+                                </a>
+                            <?php endif; ?>
+                        </div>
 
-                    <div class="absolute -right-8 -top-8 w-40 h-40 bg-white/10 rounded-full pointer-events-none"></div>
-                    <div class="absolute -right-4 -bottom-10 w-56 h-56 bg-white/10 rounded-full pointer-events-none"></div>
+                        <div class="absolute -right-8 -top-8 w-40 h-40 bg-white/10 rounded-full pointer-events-none"></div>
+                        <div class="absolute -right-4 -bottom-10 w-56 h-56 bg-white/10 rounded-full pointer-events-none"></div>
+                    <?php endif; ?>
                 </div>
             <?php endforeach; ?>
         </div>
 
         <?php if ($bannerCount > 1): ?>
             <!-- Dots -->
-            <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5">
+            <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none">
                 <template x-for="i in total" :key="i">
                     <button @click="current = i - 1"
                         :class="current === i - 1 ? 'bg-white w-4' : 'bg-white/50 w-1.5'"
-                        class="h-1.5 rounded-full transition-all duration-300">
+                        class="h-1.5 rounded-full transition-all duration-300 pointer-events-auto">
                     </button>
                 </template>
             </div>
 
             <!-- Prev/Next -->
-            <button @click="prev()" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/20 hover:bg-black/40 text-white rounded-full hidden sm:flex items-center justify-center transition">
+            <button @click="prev()" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/20 hover:bg-black/40 text-white rounded-full hidden sm:flex items-center justify-center transition z-20">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                 </svg>
             </button>
-            <button @click="next()" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/20 hover:bg-black/40 text-white rounded-full hidden sm:flex items-center justify-center transition">
+            <button @click="next()" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/20 hover:bg-black/40 text-white rounded-full hidden sm:flex items-center justify-center transition z-20">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
