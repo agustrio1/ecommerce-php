@@ -19,6 +19,28 @@ if (empty($banners)) {
 }
 $bannerCount = count($banners);
 ?>
+<?php
+// Ambil rasio aspek dari gambar banner PERTAMA yang ada, untuk dipakai
+// sebagai rasio kotak slider (supaya konsisten untuk semua slide, karena
+// slider harus punya 1 tinggi yang sama untuk semua banner).
+// Kalau gagal baca (file rusak/tidak ada), fallback ke rasio umum 2.5:1
+// yang lazim dipakai banner hero e-commerce.
+$bannerAspectRatio = '2.5 / 1'; // fallback
+
+foreach ($banners as $banner) {
+    if (! empty($banner['image_path'])) {
+        $fullPath = storage_path($banner['image_path']); // sesuaikan dengan helper path storage di project ini
+        $size     = @getimagesize($fullPath);
+
+        if ($size !== false && $size[0] > 0 && $size[1] > 0) {
+            $bannerAspectRatio = $size[0] . ' / ' . $size[1];
+        }
+
+        break; // cukup ambil dari banner pertama yang punya gambar
+    }
+}
+?>
+
 <div class="py-3" x-data="bannerSlider(<?= $bannerCount ?>)">
     <div class="relative overflow-hidden rounded-2xl">
         <div class="flex transition-transform duration-500 ease-out"
@@ -26,7 +48,7 @@ $bannerCount = count($banners);
 
             <?php foreach ($banners as $banner): ?>
                 <div class="w-full rounded-2xl flex items-center justify-center relative overflow-hidden shrink-0"
-                    style="background-color: <?= e($banner['bg_color']) ?>; aspect-ratio: 16 / 9;">
+                    style="background-color: <?= e($banner['bg_color']) ?>; aspect-ratio: <?= e($bannerAspectRatio) ?>;">
 
                     <?php if ($banner['image_path']): ?>
                         <img src="/storage/<?= e($banner['image_path']) ?>"
