@@ -25,32 +25,21 @@ $bannerCount = count($banners);
             :style="'transform: translateX(-' + (current * 100) + '%)'">
 
             <?php foreach ($banners as $banner): ?>
-                <div class="w-full aspect-[16/9] sm:aspect-[21/9] rounded-2xl flex items-center justify-center relative overflow-hidden shrink-0"
-                    style="background-color: <?= e($banner['bg_color']) ?>">
+                <div class="w-full rounded-2xl flex items-center justify-center relative overflow-hidden shrink-0"
+                    style="background-color: <?= e($banner['bg_color']) ?>; aspect-ratio: 16 / 9;">
 
                     <?php if ($banner['image_path']): ?>
-                        <!-- Banner dengan gambar: teks & tombol promosi SUDAH jadi
-                             bagian dari desain gambar itu sendiri, jadi tidak perlu
-                             overlay teks lagi di sini — cukup tampilkan gambarnya
-                             utuh (object-contain, tidak dipotong). -->
                         <img src="/storage/<?= e($banner['image_path']) ?>"
                             alt="<?= e($banner['title'] ?? '') ?>"
                             class="absolute inset-0 w-full h-full object-contain">
 
                         <?php if ($banner['button_text'] && $banner['button_url']): ?>
-                            <!-- Link tetap perlu ada supaya banner tetap bisa
-                                 diklik/ditap (untuk navigasi), tapi dibuat transparan
-                                 dan menutup seluruh area gambar — bukan kotak putih
-                                 di tengah yang menutupi tombol asli di gambar. -->
                             <a href="<?= e($banner['button_url']) ?>"
                                 class="absolute inset-0 z-10"
                                 aria-label="<?= e($banner['button_text']) ?>">
                             </a>
                         <?php endif; ?>
                     <?php else: ?>
-                        <!-- Banner fallback TANPA gambar: di sinilah overlay teks
-                             & tombol dari kode dipakai, karena tidak ada gambar
-                             yang membawa teks/tombol sendiri. -->
                         <div class="text-center text-white z-10 px-[4%] relative max-w-full">
                             <?php if ($banner['subtitle']): ?>
                                 <p class="font-medium opacity-80 mb-1"
@@ -79,7 +68,6 @@ $bannerCount = count($banners);
         </div>
 
         <?php if ($bannerCount > 1): ?>
-            <!-- Dots -->
             <div class="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20 pointer-events-none">
                 <template x-for="i in total" :key="i">
                     <button @click="current = i - 1"
@@ -89,7 +77,6 @@ $bannerCount = count($banners);
                 </template>
             </div>
 
-            <!-- Prev/Next -->
             <button @click="prev()" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/20 hover:bg-black/40 text-white rounded-full hidden sm:flex items-center justify-center transition z-20">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
