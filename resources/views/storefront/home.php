@@ -20,23 +20,19 @@ if (empty($banners)) {
 $bannerCount = count($banners);
 ?>
 <?php
-// Ambil rasio aspek dari gambar banner PERTAMA yang ada, untuk dipakai
-// sebagai rasio kotak slider (supaya konsisten untuk semua slide, karena
-// slider harus punya 1 tinggi yang sama untuk semua banner).
-// Kalau gagal baca (file rusak/tidak ada), fallback ke rasio umum 2.5:1
-// yang lazim dipakai banner hero e-commerce.
 $bannerAspectRatio = '2.5 / 1'; // fallback
 
 foreach ($banners as $banner) {
     if (! empty($banner['image_path'])) {
-        $fullPath = storage_path($banner['image_path']); // sesuaikan dengan helper path storage di project ini
-        $size     = @getimagesize($fullPath);
+        $documentRoot = rtrim($_SERVER['DOCUMENT_ROOT'] ?? '', '/');
+        $fullPath     = $documentRoot . '/storage/' . ltrim($banner['image_path'], '/');
+        $size         = @getimagesize($fullPath);
 
         if ($size !== false && $size[0] > 0 && $size[1] > 0) {
             $bannerAspectRatio = $size[0] . ' / ' . $size[1];
         }
 
-        break; // cukup ambil dari banner pertama yang punya gambar
+        break;
     }
 }
 ?>
