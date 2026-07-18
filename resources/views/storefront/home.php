@@ -25,30 +25,33 @@ $bannerCount = count($banners);
             :style="'transform: translateX(-' + (current * 100) + '%)'">
 
             <?php foreach ($banners as $banner): ?>
-                <div class="min-w-full h-40 sm:h-56 rounded-2xl flex items-center justify-center relative overflow-hidden shrink-0"
+                <div class="w-full aspect-[16/9] sm:aspect-[21/9] rounded-2xl flex items-center justify-center relative overflow-hidden shrink-0"
                     style="background-color: <?= e($banner['bg_color']) ?>">
 
                     <?php if ($banner['image_path']): ?>
                         <img src="/storage/<?= e($banner['image_path']) ?>"
-                            class="absolute inset-0 w-full h-full object-cover">
-                        <div class="absolute inset-0 bg-black/30"></div>
+                            alt="<?= e($banner['title'] ?? '') ?>"
+                            class="absolute inset-0 w-full h-full object-contain">
+                        <!-- Overlay gelap tipis biar teks tetap kebaca di atas gambar,
+                             tanpa menutupi area letterbox (bg_color) di sisi gambar -->
+                        <div class="absolute inset-0 bg-black/20"></div>
                     <?php endif; ?>
 
                     <div class="text-center text-white z-10 px-6 relative">
                         <?php if ($banner['subtitle']): ?>
-                            <p class="text-xs font-medium opacity-80 mb-1"><?= e($banner['subtitle']) ?></p>
+                            <p class="text-xs sm:text-sm font-medium opacity-80 mb-1"><?= e($banner['subtitle']) ?></p>
                         <?php endif; ?>
-                        <h2 class="text-xl sm:text-3xl font-bold mb-2"><?= e($banner['title']) ?></h2>
+                        <h2 class="text-lg sm:text-2xl md:text-3xl font-bold mb-2 leading-tight"><?= e($banner['title']) ?></h2>
                         <?php if ($banner['button_text'] && $banner['button_url']): ?>
                             <a href="<?= e($banner['button_url']) ?>"
-                                class="inline-block px-4 py-1.5 bg-white text-gray-900 text-sm font-semibold rounded-full hover:bg-gray-100 transition">
+                                class="inline-block px-4 py-1.5 bg-white text-gray-900 text-xs sm:text-sm font-semibold rounded-full hover:bg-gray-100 transition">
                                 <?= e($banner['button_text']) ?>
                             </a>
                         <?php endif; ?>
                     </div>
 
-                    <div class="absolute -right-8 -top-8 w-40 h-40 bg-white/10 rounded-full"></div>
-                    <div class="absolute -right-4 -bottom-10 w-56 h-56 bg-white/10 rounded-full"></div>
+                    <div class="absolute -right-8 -top-8 w-40 h-40 bg-white/10 rounded-full pointer-events-none"></div>
+                    <div class="absolute -right-4 -bottom-10 w-56 h-56 bg-white/10 rounded-full pointer-events-none"></div>
                 </div>
             <?php endforeach; ?>
         </div>
