@@ -1,4 +1,4 @@
-<?php $this->layout('layouts.app', ['title' => 'Login']) ?>
+<?php $this->layout('layouts.app', ['title' => 'Masuk']) ?>
 
 <?php $this->section('content') ?>
 
@@ -20,14 +20,20 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input type="email" name="email" value="<?= e(old('email')) ?>" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition"
+                    style="border-color: #D1D5DB; --tw-ring-color: #A8522E;"
+                    @focus="$el.style.borderColor = '#A8522E'"
+                    @blur="$el.style.borderColor = '#D1D5DB'">
             </div>
 
             <div x-data="{ show: false }">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <div class="relative">
                     <input :type="show ? 'text' : 'password'" name="password" required
-                        class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 transition"
+                        style="border-color: #D1D5DB; --tw-ring-color: #A8522E;"
+                        @focus="$el.style.borderColor = '#A8522E'"
+                        @blur="$el.style.borderColor = '#D1D5DB'">
                     <button type="button" @click="show = !show"
                         class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
                         <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -42,23 +48,26 @@
             </div>
 
             <div class="flex justify-end text-sm">
-                <a href="/forgot-password" class="text-orange-600 hover:underline">Lupa password?</a>
+                <a href="/forgot-password" class="hover:underline" style="color: #A8522E;">Lupa password?</a>
             </div>
 
             <button type="submit"
-                class="w-full py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition">
+                class="w-full py-2.5 text-white rounded-lg font-medium transition"
+                style="background-color: #A8522E;"
+                onmouseover="this.style.backgroundColor='#8E3F22'"
+                onmouseout="this.style.backgroundColor='#A8522E'">
                 Masuk
             </button>
         </form>
 
         <p class="text-center text-sm text-gray-500 mt-6">
             Belum punya akun?
-            <a href="/register" class="text-orange-600 font-medium hover:underline">Daftar di sini</a>
+            <a href="/register" class="font-medium hover:underline" style="color: #A8522E;">Daftar di sini</a>
         </p>
 
         <p class="text-center text-sm text-gray-500 mt-2">
             Belum verifikasi email?
-            <a href="/resend-verification" class="text-orange-600 font-medium hover:underline">Kirim ulang</a>
+            <a href="/resend-verification" class="font-medium hover:underline" style="color: #A8522E;">Kirim ulang</a>
         </p>
     </div>
 </div>

@@ -1,35 +1,51 @@
+<?php require_once __DIR__ . '/../_brand.php'; ?>
+<?php $brand = nexaroBrandTokens(); ?>
+
 <?php if (empty($rates)): ?>
-    <p class="text-amber-600 text-sm text-center py-3 bg-amber-50 rounded-lg border border-amber-100">
+    <p class="text-sm text-center py-3 rounded-lg border" style="color: <?= e($brand['clay']) ?>; background-color: <?= e($brand['stone']) ?>; border-color: <?= e($brand['line']) ?>;">
         Tidak ada kurir tersedia untuk rute ini.
     </p>
 <?php else: ?>
-    <div class="space-y-2">
+    <div class="space-y-2"
+        x-data="{
+            selected: 0,
+            rates: <?= htmlspecialchars(json_encode(array_map(fn ($r) => [
+                'company' => $r['courier_code'],
+                'type'    => $r['courier_service_code'] ?? ($r['type'] ?? ''),
+                'name'    => $r['courier_name'] . ' ' . $r['courier_service_name'],
+                'cost'    => (int) $r['price'],
+            ], $rates)), ENT_QUOTES, 'UTF-8') ?>,
+            init() {
+                if (this.rates.length > 0) {
+                    this.choose(0);
+                }
+            },
+            choose(i) {
+                this.selected = i;
+                const r = this.rates[i];
+                if (r) {
+                    this.$dispatch('courier-selected', { company: r.company, type: r.type, name: r.name, cost: r.cost });
+                }
+            }
+        }">
         <?php foreach ($rates as $i => $rate): ?>
-            <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-orange-400 transition has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50">
+            <label class="flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition"
+                :style="selected === <?= $i ?>
+                    ? 'border-color: <?= e($brand['clay']) ?>; background-color: <?= e($brand['stone']) ?>;'
+                    : 'border-color: <?= e($brand['line']) ?>; background-color: #fff;'">
                 <input type="radio"
                     name="_courier_radio"
                     value="<?= $i ?>"
-                    <?= $i === 0 ? 'checked' : '' ?>
-                    data-company="<?= e($rate['courier_code']) ?>"
-                    data-type="<?= e($rate['courier_service_code'] ?? $rate['type'] ?? '') ?>"
-                    data-name="<?= e($rate['courier_name'] . ' ' . $rate['courier_service_name']) ?>"
-                    data-cost="<?= (int) $rate['price'] ?>"
-                    onchange="(function(el){
-                        const root = document.getElementById('checkoutForm')?.closest('[x-data]') || document.querySelector('[x-data]');
-                        if (root && window.Alpine) {
-                            const data = window.Alpine.$data(root);
-                            if (data && typeof data.selectCourier === 'function') {
-                                data.selectCourier(el.dataset.company, el.dataset.type, el.dataset.name, el.dataset.cost);
-                            }
-                        }
-                    })(this)"
-                    class="text-orange-600 focus:ring-orange-500">
+                    @change="choose(<?= $i ?>)"
+                    :checked="selected === <?= $i ?>"
+                    class="focus:outline-none focus-visible:ring-2"
+                    style="accent-color: <?= e($brand['clay']) ?>;">
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-2">
-                        <p class="text-sm font-medium text-gray-800">
+                        <p class="text-sm font-medium" style="color: <?= e($brand['ink']) ?>;">
                             <?= e(strtoupper($rate['courier_code'])) ?> — <?= e($rate['courier_service_name']) ?>
                         </p>
-                        <p class="text-sm font-bold text-orange-600 shrink-0">
+                        <p class="text-sm font-bold shrink-0" style="color: <?= e($brand['clay']) ?>;">
                             Rp <?= number_format($rate['price'], 0, ',', '.') ?>
                         </p>
                     </div>
@@ -40,26 +56,4 @@
             </label>
         <?php endforeach; ?>
     </div>
-
-    <script>
-    (function() {
-        const first = document.querySelector('input[name="_courier_radio"][value="0"]');
-        if (!first) return;
-
-        const root = document.getElementById('checkoutForm')?.closest('[x-data]')
-            || document.querySelector('[x-data]');
-
-        if (root && window.Alpine) {
-            const data = window.Alpine.$data(root);
-            if (data && typeof data.selectCourier === 'function') {
-                data.selectCourier(
-                    first.dataset.company,
-                    first.dataset.type,
-                    first.dataset.name,
-                    first.dataset.cost
-                );
-            }
-        }
-    })();
-    </script>
 <?php endif; ?>

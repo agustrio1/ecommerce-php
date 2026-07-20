@@ -68,7 +68,6 @@ $currentUser = \App\Modules\Auth\Application\Services\CurrentUserService::user()
                 this.fetchCart();
                 this.fetchWishlist();
 
-                // Dengarkan event cart-updated dari add to cart
                 window.addEventListener('cart-updated', (e) => {
                     const count = e.detail?.count ?? null;
                     if (count !== null) {
@@ -78,7 +77,6 @@ $currentUser = \App\Modules\Auth\Application\Services\CurrentUserService::user()
                     }
                 });
 
-                // Dengarkan event wishlist-updated dari toggle wishlist
                 window.addEventListener('wishlist-updated', (e) => {
                     const count = e.detail?.count ?? null;
                     if (count !== null) {
@@ -135,7 +133,7 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
 
             <!-- Logo -->
             <a href="/" class="flex items-center gap-2 shrink-0">
-                <div class="w-7 h-7 bg-orange-600 rounded-md flex items-center justify-center">
+                <div class="w-7 h-7 rounded-md flex items-center justify-center" style="background-color: #A8522E;">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
                     </svg>
@@ -161,7 +159,10 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
                             value="<?= e($_GET['q'] ?? '') ?>"
                             placeholder="Cari produk..."
                             autocomplete="off"
-                            class="w-full pl-9 pr-4 py-2 bg-gray-100 border border-transparent rounded-xl text-sm focus:outline-none focus:bg-white focus:border-orange-400 transition">
+                            class="w-full pl-9 pr-4 py-2 bg-gray-100 border border-transparent rounded-xl text-sm focus:outline-none focus:bg-white transition"
+                            style="--tw-focus-border-color: #A8522E;"
+                            @focus="$el.style.borderColor = '#A8522E'"
+                            @blur="$el.style.borderColor = 'transparent'">
                     </div>
                 </form>
 
@@ -187,7 +188,7 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
                         <template x-for="product in results" :key="product.id">
                             <a :href="'/produk/' + product.slug"
                                 @click="showDropdown = false"
-                                class="flex items-center gap-3 px-4 py-3 hover:bg-orange-50 transition border-b border-gray-50 last:border-0">
+                                class="flex items-center gap-3 px-4 py-3 transition border-b border-gray-50 last:border-0 hover:bg-[#F6F2EA]">
                                 <div class="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden shrink-0">
                                     <img x-show="product.image" :src="product.image" :alt="product.name"
                                         class="w-full h-full object-cover">
@@ -199,7 +200,7 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
                                 </div>
                                 <div class="flex-1 min-w-0">
                                     <p class="text-sm font-medium text-gray-800 truncate" x-text="product.name"></p>
-                                    <p class="text-xs text-orange-600 font-semibold" x-text="'Rp ' + product.price"></p>
+                                    <p class="text-sm font-bold text-[#A8522E]" x-text="'Rp ' + product.price"></p>
                                 </div>
                             </a>
                         </template>
@@ -207,7 +208,7 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
                         <!-- Lihat semua hasil -->
                         <a :href="'/produk?q=' + encodeURIComponent(query)"
                             @click="showDropdown = false"
-                            class="flex items-center justify-center gap-1.5 py-3 text-sm text-orange-600 font-medium hover:bg-orange-50 transition border-t border-gray-100">
+                            class="flex items-center justify-center gap-1.5 py-3 text-sm font-medium transition border-t border-gray-100 text-[#A8522E] hover:bg-[#F6F2EA]">
                             <span x-text="'Lihat semua hasil untuk \'' + query + '\''"></span>
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -241,8 +242,8 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
 
         <!-- Home -->
         <a href="/"
-            class="flex flex-col items-center justify-center py-2.5 gap-0.5 transition
-                   <?= $isActive('/') ? 'text-orange-600' : 'text-gray-400 hover:text-gray-600' ?>">
+            class="flex flex-col items-center justify-center py-2.5 gap-0.5 transition"
+            style="color: <?= $isActive('/') ? '#A8522E' : '#9CA3AF' ?>;">
             <svg class="w-5 h-5" fill="<?= $isActive('/') ? 'currentColor' : 'none' ?>" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
             </svg>
@@ -251,8 +252,8 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
 
         <!-- Kategori -->
         <a href="/kategori"
-            class="flex flex-col items-center justify-center py-2.5 gap-0.5 transition
-                   <?= $isPrefix('/kategori') ? 'text-orange-600' : 'text-gray-400 hover:text-gray-600' ?>">
+            class="flex flex-col items-center justify-center py-2.5 gap-0.5 transition"
+            style="color: <?= $isPrefix('/kategori') ? '#A8522E' : '#9CA3AF' ?>;">
             <svg class="w-5 h-5" fill="<?= $isPrefix('/kategori') ? 'currentColor' : 'none' ?>" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
             </svg>
@@ -261,8 +262,8 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
 
         <!-- Cart -->
         <a href="/cart"
-            class="flex flex-col items-center justify-center py-2.5 gap-0.5 transition
-                   <?= $isActive('/cart') ? 'text-orange-600' : 'text-gray-400 hover:text-gray-600' ?>">
+            class="flex flex-col items-center justify-center py-2.5 gap-0.5 transition"
+            style="color: <?= $isActive('/cart') ? '#A8522E' : '#9CA3AF' ?>;">
             <div class="relative">
                 <svg class="w-5 h-5" fill="<?= $isActive('/cart') ? 'currentColor' : 'none' ?>" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -289,8 +290,8 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
 
         <!-- Wishlist -->
         <a href="<?= $currentUser ? '/wishlist' : '/login' ?>"
-            class="flex flex-col items-center justify-center py-2.5 gap-0.5 transition
-                   <?= $isActive('/wishlist') ? 'text-orange-600' : 'text-gray-400 hover:text-gray-600' ?>">
+            class="flex flex-col items-center justify-center py-2.5 gap-0.5 transition"
+            style="color: <?= $isActive('/wishlist') ? '#A8522E' : '#9CA3AF' ?>;">
             <div class="relative">
                 <svg class="w-5 h-5"
                     fill="<?= $isActive('/wishlist') ? 'currentColor' : 'none' ?>"
@@ -321,11 +322,11 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
 
         <!-- Profil -->
         <a href="<?= $currentUser ? '/profil' : '/login' ?>"
-            class="flex flex-col items-center justify-center py-2.5 gap-0.5 transition
-                   <?= $isActive('/profil') ? 'text-orange-600' : 'text-gray-400 hover:text-gray-600' ?>">
+            class="flex flex-col items-center justify-center py-2.5 gap-0.5 transition"
+            style="color: <?= $isActive('/profil') ? '#A8522E' : '#9CA3AF' ?>;">
             <?php if ($currentUser): ?>
-                <div class="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center">
-                    <span class="text-orange-700 font-bold text-[9px]">
+                <div class="w-5 h-5 bg-[#F6F2EA] rounded-full flex items-center justify-center">
+                    <span class="text-[#A8522E] font-bold text-[9px]">
                         <?= strtoupper(substr($currentUser->name, 0, 1)) ?>
                     </span>
                 </div>
@@ -339,6 +340,7 @@ $isPrefix    = fn(string $prefix): bool => str_starts_with($currentPath, $prefix
 
     </div>
 </nav>
+
 <!-- ===== FOOTER ===== -->
 <?php
 $pageService    = new \App\Modules\Page\Application\Services\PageService();
@@ -356,7 +358,7 @@ $settingService = \App\Modules\Setting\Application\Services\SettingService::getI
                 <nav class="flex flex-wrap gap-x-4 gap-y-1">
                     <?php foreach ($footerPages as $p): ?>
                         <a href="/p/<?= e($p['slug']) ?>"
-                            class="text-xs text-gray-500 hover:text-orange-600 transition">
+                            class="text-xs text-gray-500 transition hover:text-[#A8522E]">
                             <?= e($p['title']) ?>
                         </a>
                     <?php endforeach; ?>
@@ -370,49 +372,50 @@ $settingService = \App\Modules\Setting\Application\Services\SettingService::getI
         </div>
     </div>
 </footer>
+
 <script>
-  function liveSearch() {
-        return {
-            query: '<?= e($_GET['q'] ?? '') ?>',
-            results: [],
-            loading: false,
-            showDropdown: false,
-            controller: null,
+function liveSearch() {
+    return {
+        query: '<?= e($_GET['q'] ?? '') ?>',
+        results: [],
+        loading: false,
+        showDropdown: false,
+        controller: null,
 
-            async search() {
-                const q = this.query.trim();
+        async search() {
+            const q = this.query.trim();
 
-                if (q.length < 2) {
-                    this.results      = [];
-                    this.showDropdown = false;
-                    return;
+            if (q.length < 2) {
+                this.results      = [];
+                this.showDropdown = false;
+                return;
+            }
+
+            if (this.controller) {
+                this.controller.abort();
+            }
+
+            this.controller   = new AbortController();
+            this.loading      = true;
+            this.showDropdown = true;
+
+            try {
+                const res  = await fetch('/search?q=' + encodeURIComponent(q), {
+                    signal: this.controller.signal,
+                });
+                const data = await res.json();
+                this.results = data.products || [];
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    this.results = [];
                 }
-
-                // Batalkan request sebelumnya kalau masih loading
-                if (this.controller) {
-                    this.controller.abort();
-                }
-
-                this.controller   = new AbortController();
-                this.loading      = true;
-                this.showDropdown = true;
-
-                try {
-                    const res  = await fetch('/search?q=' + encodeURIComponent(q), {
-                        signal: this.controller.signal,
-                    });
-                    const data = await res.json();
-                    this.results = data.products || [];
-                } catch (e) {
-                    if (e.name !== 'AbortError') {
-                        this.results = [];
-                    }
-                } finally {
-                    this.loading = false;
-                }
+            } finally {
+                this.loading = false;
             }
         }
-    }</script>
+    }
+}
+</script>
 <script src="/assets/js/app.js"></script>
 </body>
 </html>

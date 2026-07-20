@@ -36,46 +36,78 @@ class StorefrontController
         ]));
     }
 
+    /**
+     * FIX SEO: filter kategori sebelumnya pakai ID mentah di URL
+     * (?kategori=3) — sekarang pakai slug (?kategori=tas), lebih ramah
+     * SEO dan lebih enak dibaca manusia, konsisten dengan pola
+     * /kategori/{slug} yang sudah dipakai di categoryProducts().
+     *
+     * Resolve slug -> objek Category -> ambil ->id di sini (internal),
+     * supaya ProductService::paginate() yang sudah mengharapkan filter
+     * 'category_id' (int) tidak perlu diubah sama sekali.
+     *
+     * Fallback: kalau parameter kategori berupa angka murni (link lama
+     * yang mungkin masih ter-bookmark/ter-index search engine sebelum
+     * fix ini), tetap dicoba resolve lewat ID supaya link lama tidak
+     * langsung mati — tapi link BARU yang dihasilkan template selalu
+     * pakai slug.
+     */
     public function products(Request $request): Response
     {
         $page      = max(1, (int) $request->query('page', 1));
         $search    = (string) $request->query('q', '');
-        $catId     = $request->query('kategori');
+        $catParam  = $request->query('kategori');
         $sort      = $request->query('sort', 'terbaru');
         $minPrice  = $request->query('harga_min');
         $maxPrice  = $request->query('harga_max');
         $minRating = $request->query('rating');
 
         $filters = ['status' => 'published'];
-        if ($search !== '')  $filters['search']      = $search;
-        if ($catId)          $filters['category_id'] = (int) $catId;
-        if ($minPrice)       $filters['min_price']   = (float) $minPrice;
-        if ($maxPrice)       $filters['max_price']   = (float) $maxPrice;
-        if ($minRating)      $filters['min_rating']  = (int) $minRating;
-        if ($sort)           $filters['sort']        = $sort;
+        if ($search !== '') $filters['search'] = $search;
+
+        $activeCategory = null;
+        if ($catParam) {
+            try {
+                if (ctype_digit((string) $catParam)) {
+                    // Fallback untuk link lama berbasis ID.
+                    $activeCategory = $this->categoryService->find((int) $catParam);
+                } else {
+                    $activeCategory = $this->categoryService->findBySlug((string) $catParam);
+                }
+                $filters['category_id'] = $activeCategory->id;
+            } catch (\Throwable $e) {
+                // Slug/ID tidak ditemukan — perlakukan sebagai "semua kategori"
+                // daripada melempar error ke pengunjung.
+                $activeCategory = null;
+            }
+        }
+
+        if ($minPrice)  $filters['min_price']  = (float) $minPrice;
+        if ($maxPrice)  $filters['max_price']  = (float) $maxPrice;
+        if ($minRating) $filters['min_rating'] = (int) $minRating;
+        if ($sort)      $filters['sort']       = $sort;
 
         $result          = $this->productService->paginate($page, 20, $filters);
         $categories      = $this->categoryService->findRootCategories();
         $images          = $this->productService->getPrimaryImagesByProducts($result['data']);
         $flashSalePrices = $this->productService->getFlashSalePrices($result['data']);
-        $activeCategory  = $catId ? $this->categoryService->find((int) $catId) : null;
 
         return Response::make(view('storefront.products', [
-            'title'            => $search ? "Hasil: {$search}" : 'Semua Produk',
-            'products'         => $result['data'],
-            'total'            => $result['total'],
-            'page'             => $page,
-            'perPage'          => 20,
-            'search'           => $search,
-            'categories'       => $categories,
-            'activeCategoryId' => $catId ? (int) $catId : null,
-            'activeCategory'   => $activeCategory,
-            'sort'             => $sort,
-            'productImages'    => $images,
-            'flashSalePrices'  => $flashSalePrices,
-            'minPrice'         => $minPrice,
-            'maxPrice'         => $maxPrice,
-            'minRating'        => $minRating,
+            'title'              => $search ? "Hasil: {$search}" : 'Semua Produk',
+            'products'           => $result['data'],
+            'total'              => $result['total'],
+            'page'               => $page,
+            'perPage'            => 20,
+            'search'             => $search,
+            'categories'         => $categories,
+            'activeCategorySlug' => $activeCategory?->slug,
+            'activeCategory'     => $activeCategory,
+            'sort'               => $sort,
+            'productImages'      => $images,
+            'flashSalePrices'    => $flashSalePrices,
+            'minPrice'           => $minPrice,
+            'maxPrice'           => $maxPrice,
+            'minRating'          => $minRating,
         ]));
     }
 
@@ -87,7 +119,6 @@ class StorefrontController
             $images     = $this->productService->getImages($product->id);
             $categories = $this->productService->getCategoryIds($product->id);
 
-            // Cek flash sale untuk produk ini
             $flashSaleService = new \App\Modules\FlashSale\Application\Services\FlashSaleService();
             $flashSalePrice   = $flashSaleService->getActivePriceForProduct($product->id);
 
@@ -150,14 +181,10 @@ class StorefrontController
         ]));
     }
 
-    /**
-     * Halaman daftar semua kategori.
-     */
     public function categories(Request $request): Response
     {
         $tree = $this->categoryService->getTree();
 
-        // Hitung jumlah produk per kategori
         $pdo    = db();
         $counts = [];
         $stmt   = $pdo->query(
@@ -178,11 +205,6 @@ class StorefrontController
         ]));
     }
 
-
-
-    /**
-     * AJAX live search — dipanggil dari navbar saat user ketik.
-     */
     public function liveSearch(Request $request): Response
     {
         $q = trim((string) $request->query('q', ''));
@@ -215,9 +237,6 @@ class StorefrontController
 
     // ===================== HELPERS =====================
 
-    /**
-     * Ambil semua ID kategori (kategori + semua turunannya).
-     */
     private function getAllCategoryIds(int $categoryId): array
     {
         $ids  = [$categoryId];
@@ -232,9 +251,6 @@ class StorefrontController
         return $ids;
     }
 
-    /**
-     * Build breadcrumb array untuk kategori.
-     */
     private function buildBreadcrumb(object $category): array
     {
         $crumbs = [['name' => $category->name, 'slug' => $category->slug]];

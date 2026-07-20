@@ -20,7 +20,10 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
                 <input type="text" name="name" value="<?= e(old('name')) ?>" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition"
+                    style="border-color: #D1D5DB; --tw-ring-color: #A8522E;"
+                    @focus="$el.style.borderColor = '#A8522E'"
+                    @blur="$el.style.borderColor = '#D1D5DB'">
                 <?php if (! empty($formErrors['name'])): ?>
                     <p class="text-red-600 text-xs mt-1"><?= e($formErrors['name']) ?></p>
                 <?php endif; ?>
@@ -29,7 +32,10 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input type="email" name="email" value="<?= e(old('email')) ?>" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition"
+                    style="border-color: #D1D5DB; --tw-ring-color: #A8522E;"
+                    @focus="$el.style.borderColor = '#A8522E'"
+                    @blur="$el.style.borderColor = '#D1D5DB'">
                 <?php if (! empty($formErrors['email'])): ?>
                     <p class="text-red-600 text-xs mt-1"><?= e($formErrors['email']) ?></p>
                 <?php endif; ?>
@@ -38,14 +44,20 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">No. HP (opsional)</label>
                 <input type="text" name="phone" value="<?= e(old('phone')) ?>"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition"
+                    style="border-color: #D1D5DB; --tw-ring-color: #A8522E;"
+                    @focus="$el.style.borderColor = '#A8522E'"
+                    @blur="$el.style.borderColor = '#D1D5DB'">
             </div>
 
             <div x-data="{ show: false }">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <div class="relative">
                     <input :type="show ? 'text' : 'password'" name="password" required
-                        class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 transition"
+                        style="border-color: #D1D5DB; --tw-ring-color: #A8522E;"
+                        @focus="$el.style.borderColor = '#A8522E'"
+                        @blur="$el.style.borderColor = '#D1D5DB'">
                     <button type="button" @click="show = !show"
                         class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
                         <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -66,7 +78,10 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Konfirmasi Password</label>
                 <div class="relative">
                     <input :type="show ? 'text' : 'password'" name="password_confirmation" required
-                        class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        class="w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 transition"
+                        style="border-color: #D1D5DB; --tw-ring-color: #A8522E;"
+                        @focus="$el.style.borderColor = '#A8522E'"
+                        @blur="$el.style.borderColor = '#D1D5DB'">
                     <button type="button" @click="show = !show"
                         class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600">
                         <svg x-show="!show" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -84,14 +99,17 @@
             </div>
 
             <button type="submit"
-                class="w-full py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition">
+                class="w-full py-2.5 text-white rounded-lg font-medium transition"
+                style="background-color: #A8522E;"
+                onmouseover="this.style.backgroundColor='#8E3F22'"
+                onmouseout="this.style.backgroundColor='#A8522E'">
                 Daftar
             </button>
         </form>
 
         <p class="text-center text-sm text-gray-500 mt-6">
             Sudah punya akun?
-            <a href="/login" class="text-orange-600 font-medium hover:underline">Masuk di sini</a>
+            <a href="/login" class="font-medium hover:underline" style="color: #A8522E;">Masuk di sini</a>
         </p>
     </div>
 </div>

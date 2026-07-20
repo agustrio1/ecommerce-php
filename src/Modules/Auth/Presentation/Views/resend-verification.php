@@ -13,17 +13,23 @@
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input type="email" name="email" required
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 transition"
+                    style="border-color: #D1D5DB; --tw-ring-color: #A8522E;"
+                    @focus="$el.style.borderColor = '#A8522E'"
+                    @blur="$el.style.borderColor = '#D1D5DB'">
             </div>
 
             <button type="submit"
-                class="w-full py-2.5 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700 transition">
+                class="w-full py-2.5 text-white rounded-lg font-medium transition"
+                style="background-color: #A8522E;"
+                onmouseover="this.style.backgroundColor='#8E3F22'"
+                onmouseout="this.style.backgroundColor='#A8522E'">
                 Kirim Ulang
             </button>
         </form>
 
         <p class="text-center text-sm text-gray-500 mt-6">
-            <a href="/login" class="text-orange-600 font-medium hover:underline">Kembali ke login</a>
+            <a href="/login" class="font-medium hover:underline" style="color: #A8522E;">Kembali ke login</a>
         </p>
     </div>
 </div>

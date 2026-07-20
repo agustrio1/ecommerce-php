@@ -2,8 +2,11 @@
 
 <?php $this->section('content') ?>
 
+<?php require_once __DIR__ . '/_brand.php'; ?>
+<?php $brand = nexaroBrandTokens(); ?>
+
 <div class="py-4">
-    <h1 class="font-bold text-gray-900 text-lg mb-4">Semua Kategori</h1>
+    <h1 class="font-bold text-lg mb-4" style="color: <?= e($brand['ink']) ?>;">Semua Kategori</h1>
 
     <?php if (empty($tree)): ?>
         <p class="text-gray-400 text-sm text-center py-8">Belum ada kategori.</p>
@@ -13,24 +16,24 @@
                 <?php $cat = $node['category']; ?>
                 <?php $prodCount = $counts[$cat->id] ?? 0; ?>
 
-                <!-- Kategori utama -->
                 <div>
                     <a href="/kategori/<?= e($cat->slug) ?>"
-                        class="flex items-center gap-3 p-4 bg-white border border-gray-100 rounded-xl hover:border-orange-300 hover:shadow-sm transition group">
-                        <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-orange-100 transition">
+                        class="flex items-center gap-3 p-4 bg-white border rounded-xl hover:shadow-sm transition group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                        style="border-color: <?= e($brand['line']) ?>;">
+                        <div class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style="background-color: <?= e($brand['stone']) ?>;">
                             <?php if ($cat->image): ?>
                                 <img src="/storage/<?= e($cat->image) ?>" class="w-8 h-8 object-cover rounded-lg">
                             <?php else: ?>
-                                <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+                                <svg class="w-6 h-6" fill="none" stroke="<?= e($brand['ink']) ?>" viewBox="0 0 24 24">
+                                    <?= categoryIconPath($cat->name) ?>
                                 </svg>
                             <?php endif; ?>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="font-semibold text-gray-800 group-hover:text-orange-700 transition"><?= e($cat->name) ?></p>
+                            <p class="font-semibold group-hover:opacity-70 transition" style="color: <?= e($brand['ink']) ?>;"><?= e($cat->name) ?></p>
                             <p class="text-xs text-gray-400 mt-0.5"><?= $prodCount ?> produk</p>
                         </div>
-                        <svg class="w-5 h-5 text-gray-300 group-hover:text-orange-400 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-5 h-5 opacity-30 group-hover:opacity-60 transition shrink-0" fill="none" stroke="<?= e($brand['ink']) ?>" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
                     </a>
@@ -42,21 +45,22 @@
                                 <?php $child = $childNode['category']; ?>
                                 <?php $childCount = $counts[$child->id] ?? 0; ?>
                                 <a href="/kategori/<?= e($child->slug) ?>"
-                                    class="flex items-center gap-3 px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl hover:border-orange-200 hover:bg-orange-50 transition group">
-                                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0 border border-gray-100">
+                                    class="flex items-center gap-3 px-4 py-2.5 bg-gray-50 border rounded-xl transition group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                                    style="border-color: <?= e($brand['line']) ?>;">
+                                    <div class="w-8 h-8 bg-white rounded-lg flex items-center justify-center shrink-0 border" style="border-color: <?= e($brand['line']) ?>;">
                                         <?php if ($child->image): ?>
                                             <img src="/storage/<?= e($child->image) ?>" class="w-5 h-5 object-cover rounded">
                                         <?php else: ?>
-                                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                            <svg class="w-4 h-4" fill="none" stroke="<?= e($brand['ink']) ?>" viewBox="0 0 24 24">
+                                                <?= categoryIconPath($child->name) ?>
                                             </svg>
                                         <?php endif; ?>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <p class="text-sm text-gray-700 group-hover:text-orange-600 transition"><?= e($child->name) ?></p>
+                                        <p class="text-sm group-hover:opacity-70 transition" style="color: <?= e($brand['ink']) ?>;"><?= e($child->name) ?></p>
                                         <p class="text-xs text-gray-400"><?= $childCount ?> produk</p>
                                     </div>
-                                    <svg class="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-4 h-4 opacity-30 group-hover:opacity-60 transition shrink-0" fill="none" stroke="<?= e($brand['ink']) ?>" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                     </svg>
                                 </a>

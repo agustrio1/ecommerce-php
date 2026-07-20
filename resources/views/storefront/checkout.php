@@ -2,6 +2,9 @@
 
 <?php $this->section('content') ?>
 
+<?php require_once __DIR__ . '/_brand.php'; ?>
+<?php $brand = nexaroBrandTokens(); ?>
+
 <?php
 if (! function_exists('js_attr')) {
     function js_attr($value): string
@@ -11,13 +14,15 @@ if (! function_exists('js_attr')) {
 }
 ?>
 
-<div class="py-4" x-data="checkoutPage()">
+<div class="py-4"
+    x-data="checkoutPage()"
+    @courier-selected.window="selectCourier($event.detail.company, $event.detail.type, $event.detail.name, $event.detail.cost)">
 
-    <h1 class="font-bold text-gray-900 text-lg mb-4">Checkout</h1>
+    <h1 class="font-bold text-lg mb-4" style="color: <?= e($brand['ink']) ?>;">Checkout</h1>
 
     <?php $flashError = \App\Core\Http\Session::getFlash('error'); ?>
     <?php if ($flashError): ?>
-        <div class="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-xl border border-red-200">
+        <div class="mb-4 p-3 text-sm rounded-xl border" style="background-color: #FBEAE6; color: <?= e($brand['urgent']) ?>; border-color: <?= e($brand['urgent']) ?>;">
             <?= e($flashError) ?>
         </div>
     <?php endif; ?>
@@ -26,30 +31,31 @@ if (! function_exists('js_attr')) {
         <?= csrf_field() ?>
 
         <!-- RINGKASAN PRODUK -->
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <h2 class="font-semibold text-gray-800 mb-3 text-sm">Ringkasan Belanja</h2>
+        <div class="bg-white rounded-xl border p-4" style="border-color: <?= e($brand['line']) ?>;">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.15em] mb-1" style="color: <?= e($brand['moss']) ?>;">Ringkasan</p>
+            <h2 class="font-semibold mb-3 text-sm" style="color: <?= e($brand['ink']) ?>;">Belanja Kamu</h2>
             <div class="space-y-3">
                 <?php foreach ($items as $item): ?>
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden shrink-0">
+                        <div class="w-12 h-12 rounded-lg overflow-hidden shrink-0" style="background-color: <?= e($brand['stone']) ?>;">
                             <?php if ($item->productImage): ?>
-                                <img src="/storage/<?= e($item->productImage) ?>" class="w-full h-full object-cover">
+                                <img src="/storage/<?= e($item->productImage) ?>" alt="<?= e($item->productName) ?>" class="w-full h-full object-cover">
                             <?php else: ?>
                                 <div class="w-full h-full flex items-center justify-center">
-                                    <svg class="w-6 h-6 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-6 h-6 opacity-30" fill="none" stroke="<?= e($brand['ink']) ?>" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01"/>
                                     </svg>
                                 </div>
                             <?php endif; ?>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-800 truncate"><?= e($item->productName) ?></p>
+                            <p class="text-sm font-medium truncate" style="color: <?= e($brand['ink']) ?>;"><?= e($item->productName) ?></p>
                             <?php if ($item->variantLabel !== 'Default'): ?>
                                 <p class="text-xs text-gray-400"><?= e($item->variantLabel) ?></p>
                             <?php endif; ?>
                             <p class="text-xs text-gray-500"><?= $item->quantity ?>x Rp <?= number_format($item->price, 0, ',', '.') ?></p>
                         </div>
-                        <p class="text-sm font-bold text-gray-900 shrink-0">
+                        <p class="text-sm font-bold shrink-0" style="color: <?= e($brand['ink']) ?>;">
                             Rp <?= number_format($item->subtotal(), 0, ',', '.') ?>
                         </p>
                     </div>
@@ -58,8 +64,9 @@ if (! function_exists('js_attr')) {
         </div>
 
         <!-- ALAMAT PENGIRIMAN -->
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <h2 class="font-semibold text-gray-800 mb-3 text-sm">Alamat Pengiriman</h2>
+        <div class="bg-white rounded-xl border p-4" style="border-color: <?= e($brand['line']) ?>;">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.15em] mb-1" style="color: <?= e($brand['moss']) ?>;">Kirim Ke</p>
+            <h2 class="font-semibold mb-3 text-sm" style="color: <?= e($brand['ink']) ?>;">Alamat Pengiriman</h2>
 
             <?php if (! empty($addresses)): ?>
                 <div class="space-y-3 mb-3">
@@ -81,7 +88,8 @@ if (! function_exists('js_attr')) {
                                 is_primary:     <?= $address->isPrimary ? 'true' : 'false' ?>
                             }
                         )">
-                            <label class="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:border-orange-400 transition has-[:checked]:border-orange-500 has-[:checked]:bg-orange-50">
+                            <label class="flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition"
+                                style="border-color: <?= e($brand['line']) ?>;">
                                 <input type="radio"
                                     name="address_id"
                                     value="<?= (int) $address->id ?>"
@@ -90,19 +98,20 @@ if (! function_exists('js_attr')) {
                                         $dispatch('address-selected', { id: <?= (int) $address->id ?> });
                                         $root.dispatchEvent(new CustomEvent('reset-rates'));
                                     "
-                                    class="mt-0.5 text-orange-600 focus:ring-orange-500">
+                                    style="accent-color: <?= e($brand['clay']) ?>;"
+                                    class="mt-0.5 focus:outline-none focus-visible:ring-2">
                                 <div class="flex-1 min-w-0">
                                     <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-                                        <span class="text-sm font-semibold text-gray-800">
+                                        <span class="text-sm font-semibold" style="color: <?= e($brand['ink']) ?>;">
                                             <?php if ($address->recipientName): ?>
                                                 <?= e($address->recipientName) ?>
                                             <?php else: ?>
                                                 <span class="text-gray-400 italic">Nama belum diisi</span>
                                             <?php endif; ?>
                                         </span>
-                                        <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full"><?= e($address->label) ?></span>
+                                        <span class="text-xs px-2 py-0.5 rounded-full" style="background-color: <?= e($brand['stone']) ?>; color: <?= e($brand['ink']) ?>;"><?= e($address->label) ?></span>
                                         <?php if ($address->isPrimary): ?>
-                                            <span class="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">Utama</span>
+                                            <span class="text-xs px-2 py-0.5 rounded-full text-white" style="background-color: <?= e($brand['clay']) ?>;">Utama</span>
                                         <?php endif; ?>
                                     </div>
                                     <?php if ($address->phone): ?>
@@ -112,14 +121,14 @@ if (! function_exists('js_attr')) {
                                         <p class="text-xs text-gray-600 leading-relaxed mt-0.5"><?= e($address->fullAddress()) ?></p>
                                     <?php endif; ?>
                                     <?php if (! $address->areaId): ?>
-                                        <p class="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                                        <p class="text-xs mt-1 flex items-center gap-1" style="color: <?= e($brand['clay']) ?>;">
                                             <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
                                             </svg>
                                             Area ID belum diset — ongkir tidak bisa dihitung
                                         </p>
                                     <?php else: ?>
-                                        <p class="text-xs text-green-600 mt-1 flex items-center gap-1">
+                                        <p class="text-xs mt-1 flex items-center gap-1" style="color: <?= e($brand['moss']) ?>;">
                                             <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                             </svg>
@@ -131,7 +140,8 @@ if (! function_exists('js_attr')) {
 
                             <button type="button"
                                 @click="showEdit = !showEdit"
-                                class="mt-1 ml-1 text-xs text-orange-600 hover:underline">
+                                class="mt-1 ml-1 text-xs hover:underline focus:outline-none focus-visible:ring-2"
+                                style="color: <?= e($brand['clay']) ?>;">
                                 <span x-show="!showEdit" class="inline-flex items-center gap-1">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
@@ -142,8 +152,8 @@ if (! function_exists('js_attr')) {
                                 <span x-show="showEdit">— Tutup form edit</span>
                             </button>
 
-                            <div x-show="showEdit" x-cloak class="mt-2 border border-orange-200 rounded-xl p-4 bg-orange-50/40 space-y-3">
-                                <p class="text-xs font-semibold text-orange-700 mb-1 flex items-center gap-1">
+                            <div x-show="showEdit" x-cloak class="mt-2 border rounded-xl p-4 space-y-3" style="border-color: <?= e($brand['clay']) ?>; background-color: <?= e($brand['stone']) ?>;">
+                                <p class="text-xs font-semibold mb-1 flex items-center gap-1" style="color: <?= e($brand['clay']) ?>;">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 6.75L18 9.75"/>
@@ -153,9 +163,9 @@ if (! function_exists('js_attr')) {
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Label</label>
+                                        <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">Label</label>
                                         <select x-model="editData.label"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white">
+                                            class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 bg-white" style="border-color: <?= e($brand['line']) ?>;">
                                             <option value="Rumah">Rumah</option>
                                             <option value="Kantor">Kantor</option>
                                             <option value="Kos/Apartemen">Kos/Apartemen</option>
@@ -163,35 +173,35 @@ if (! function_exists('js_attr')) {
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Nama Penerima <span class="text-red-500">*</span></label>
+                                        <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">Nama Penerima <span style="color: <?= e($brand['urgent']) ?>;">*</span></label>
                                         <input type="text" x-model="editData.recipient_name"
                                             placeholder="Nama penerima paket"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white">
+                                            class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 bg-white" style="border-color: <?= e($brand['line']) ?>;">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">No. HP <span class="text-red-500">*</span></label>
+                                        <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">No. HP <span style="color: <?= e($brand['urgent']) ?>;">*</span></label>
                                         <input type="text" x-model="editData.phone"
                                             placeholder="628xxxxxxxxxx"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white">
+                                            class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 bg-white" style="border-color: <?= e($brand['line']) ?>;">
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-medium text-gray-700 mb-1">Kode Pos</label>
+                                        <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">Kode Pos</label>
                                         <input type="text" x-model="editData.postal_code"
                                             placeholder="12345"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white">
+                                            class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 bg-white" style="border-color: <?= e($brand['line']) ?>;">
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">Alamat Lengkap <span class="text-red-500">*</span></label>
+                                    <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">Alamat Lengkap <span style="color: <?= e($brand['urgent']) ?>;">*</span></label>
                                     <textarea x-model="editData.address" rows="2"
                                         placeholder="Jl. Contoh No. 123, RT 01/RW 02"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"></textarea>
+                                        class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 bg-white" style="border-color: <?= e($brand['line']) ?>;"></textarea>
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs font-medium text-gray-700 mb-1">
-                                        Kecamatan / Kota <span class="text-red-500">*</span>
+                                    <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">
+                                        Kecamatan / Kota <span style="color: <?= e($brand['urgent']) ?>;">*</span>
                                         <span class="text-gray-400 font-normal">(wajib untuk kalkulasi ongkir)</span>
                                     </label>
                                     <div class="relative">
@@ -202,32 +212,32 @@ if (! function_exists('js_attr')) {
                                             @keydown.escape="showDrop = false"
                                             placeholder="Ketik nama kecamatan... (min. 3 huruf)"
                                             autocomplete="off"
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white pr-8">
+                                            class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 bg-white pr-8" style="border-color: <?= e($brand['line']) ?>;">
                                         <div x-show="areaLoading" class="absolute right-2 top-1/2 -translate-y-1/2">
-                                            <svg class="animate-spin w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24">
+                                            <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24" style="color: <?= e($brand['clay']) ?>;">
                                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                                             </svg>
                                         </div>
                                         <div x-show="showDrop && areaResults.length > 0"
                                             @click.outside="showDrop = false"
-                                            class="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1">
+                                            class="absolute top-full left-0 right-0 bg-white border rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1" style="border-color: <?= e($brand['line']) ?>;">
                                             <template x-for="area in areaResults" :key="area.id">
                                                 <button type="button" @click="selectArea(area)"
-                                                    class="w-full px-3 py-2.5 text-left hover:bg-orange-50 border-b border-gray-50 last:border-0">
-                                                    <span class="block text-sm text-gray-800" x-text="area.name"></span>
+                                                    class="w-full px-3 py-2.5 text-left hover:bg-gray-50 border-b last:border-0" style="border-color: <?= e($brand['line']) ?>;">
+                                                    <span class="block text-sm" style="color: <?= e($brand['ink']) ?>;" x-text="area.name"></span>
                                                     <span class="block text-xs text-gray-400 font-mono" x-text="area.id"></span>
                                                 </button>
                                             </template>
                                         </div>
                                     </div>
                                     <div class="mt-1 flex items-center gap-1.5" x-show="editData.area_id">
-                                        <svg class="w-3.5 h-3.5 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                        <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20" style="color: <?= e($brand['moss']) ?>;">
                                             <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                                         </svg>
-                                        <span class="text-xs text-gray-600">Area terpilih: <code class="font-mono text-gray-700 bg-white px-1 rounded text-xs" x-text="editData.area_id"></code></span>
+                                        <span class="text-xs text-gray-600">Area terpilih: <code class="font-mono bg-white px-1 rounded text-xs" style="color: <?= e($brand['ink']) ?>;" x-text="editData.area_id"></code></span>
                                     </div>
-                                    <p x-show="!editData.area_id" class="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                                    <p x-show="!editData.area_id" class="text-xs mt-1 flex items-center gap-1" style="color: <?= e($brand['clay']) ?>;">
                                         <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
                                         </svg>
@@ -236,15 +246,15 @@ if (! function_exists('js_attr')) {
                                 </div>
 
                                 <label class="flex items-center gap-2">
-                                    <input type="checkbox" x-model="editData.is_primary"
-                                        class="rounded border-gray-300 text-orange-600 focus:ring-orange-500">
-                                    <span class="text-xs text-gray-700">Jadikan alamat utama</span>
+                                    <input type="checkbox" x-model="editData.is_primary" style="accent-color: <?= e($brand['clay']) ?>;">
+                                    <span class="text-xs" style="color: <?= e($brand['ink']) ?>;">Jadikan alamat utama</span>
                                 </label>
 
-                                <div x-show="editError" class="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600" x-text="editError"></div>
+                                <div x-show="editError" class="p-3 rounded-lg text-xs" style="background-color: #FBEAE6; color: <?= e($brand['urgent']) ?>;" x-text="editError"></div>
 
                                 <button type="button" @click="saveEdit()" :disabled="editSaving"
-                                    class="w-full py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition disabled:opacity-50">
+                                    class="w-full py-2.5 text-white rounded-lg text-sm font-medium transition disabled:opacity-50 focus:outline-none focus-visible:ring-2"
+                                    style="background-color: <?= e($brand['clay']) ?>;">
                                     <span x-show="!editSaving" class="inline-flex items-center justify-center gap-1.5">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13.5l3 3 3-3m-3-6v9m9 4.5H3a1.5 1.5 0 01-1.5-1.5V4.5A1.5 1.5 0 013 3h12.379a1.5 1.5 0 011.06.44l3.122 3.12a1.5 1.5 0 01.439 1.061V19.5a1.5 1.5 0 01-1.5 1.5z"/>
@@ -261,19 +271,19 @@ if (! function_exists('js_attr')) {
 
             <div x-data="addressNewForm()">
                 <button type="button" @click="showForm = !showForm"
-                    class="text-sm text-orange-600 hover:underline font-medium">
+                    class="text-sm font-medium hover:underline focus:outline-none focus-visible:ring-2" style="color: <?= e($brand['clay']) ?>;">
                     <span x-show="!showForm">+ Tambah Alamat Baru</span>
                     <span x-show="showForm">— Tutup Form</span>
                 </button>
 
-                <div x-show="showForm" x-cloak class="mt-3 border border-gray-200 rounded-xl p-4 space-y-3">
-                    <p class="text-xs font-semibold text-gray-700">Alamat Baru</p>
+                <div x-show="showForm" x-cloak class="mt-3 border rounded-xl p-4 space-y-3" style="border-color: <?= e($brand['line']) ?>;">
+                    <p class="text-xs font-semibold" style="color: <?= e($brand['ink']) ?>;">Alamat Baru</p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Label Alamat</label>
+                            <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">Label Alamat</label>
                             <select x-model="formData.label"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style="border-color: <?= e($brand['line']) ?>;">
                                 <option value="Rumah">Rumah</option>
                                 <option value="Kantor">Kantor</option>
                                 <option value="Kos/Apartemen">Kos/Apartemen</option>
@@ -281,31 +291,31 @@ if (! function_exists('js_attr')) {
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Nama Penerima <span class="text-red-500">*</span></label>
+                            <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">Nama Penerima <span style="color: <?= e($brand['urgent']) ?>;">*</span></label>
                             <input type="text" x-model="formData.recipient_name" placeholder="Nama penerima paket"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style="border-color: <?= e($brand['line']) ?>;">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">No. HP <span class="text-red-500">*</span></label>
+                            <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">No. HP <span style="color: <?= e($brand['urgent']) ?>;">*</span></label>
                             <input type="text" x-model="formData.phone" placeholder="628xxxxxxxxxx"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style="border-color: <?= e($brand['line']) ?>;">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">Kode Pos</label>
+                            <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">Kode Pos</label>
                             <input type="text" x-model="formData.postal_code" placeholder="12345"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+                                class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style="border-color: <?= e($brand['line']) ?>;">
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Alamat Lengkap <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">Alamat Lengkap <span style="color: <?= e($brand['urgent']) ?>;">*</span></label>
                         <textarea x-model="formData.address" rows="2" placeholder="Jl. Contoh No. 123, RT 01/RW 02"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+                            class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style="border-color: <?= e($brand['line']) ?>;"></textarea>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">
-                            Kecamatan / Kota <span class="text-red-500">*</span>
+                        <label class="block text-xs font-medium mb-1" style="color: <?= e($brand['ink']) ?>;">
+                            Kecamatan / Kota <span style="color: <?= e($brand['urgent']) ?>;">*</span>
                             <span class="text-gray-400 font-normal">(wajib untuk kalkulasi ongkir)</span>
                         </label>
                         <div class="relative">
@@ -316,44 +326,44 @@ if (! function_exists('js_attr')) {
                                 @keydown.escape="showAreaDropdown = false"
                                 placeholder="Ketik nama kecamatan... (min. 3 huruf)"
                                 autocomplete="off"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 pr-8">
+                                class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 pr-8" style="border-color: <?= e($brand['line']) ?>;">
                             <div x-show="areaLoading" class="absolute right-2 top-1/2 -translate-y-1/2">
-                                <svg class="animate-spin w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24">
+                                <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24" style="color: <?= e($brand['clay']) ?>;">
                                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
                                 </svg>
                             </div>
                             <div x-show="showAreaDropdown && areaResults.length > 0"
                                 @click.outside="showAreaDropdown = false"
-                                class="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1">
+                                class="absolute top-full left-0 right-0 bg-white border rounded-lg shadow-lg z-30 max-h-48 overflow-y-auto mt-1" style="border-color: <?= e($brand['line']) ?>;">
                                 <template x-for="area in areaResults" :key="area.id">
                                     <button type="button" @click="selectArea(area)"
-                                        class="w-full px-3 py-2.5 text-left hover:bg-orange-50 border-b border-gray-50 last:border-0">
-                                        <span class="block text-sm text-gray-800" x-text="area.name"></span>
+                                        class="w-full px-3 py-2.5 text-left hover:bg-gray-50 border-b last:border-0" style="border-color: <?= e($brand['line']) ?>;">
+                                        <span class="block text-sm" style="color: <?= e($brand['ink']) ?>;" x-text="area.name"></span>
                                         <span class="block text-xs text-gray-400 font-mono" x-text="area.id"></span>
                                     </button>
                                 </template>
                             </div>
                         </div>
                         <div class="mt-1 flex items-center gap-1.5" x-show="formData.area_id">
-                            <svg class="w-3.5 h-3.5 text-green-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20" style="color: <?= e($brand['moss']) ?>;">
                                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
                             </svg>
-                            <span class="text-xs text-gray-600">Area terpilih: <code class="font-mono text-gray-700 bg-gray-100 px-1 rounded" x-text="formData.area_id"></code></span>
+                            <span class="text-xs text-gray-600">Area terpilih: <code class="font-mono bg-gray-100 px-1 rounded" x-text="formData.area_id"></code></span>
                         </div>
                         <p x-show="!formData.area_id" class="text-xs text-gray-400 mt-1">Belum dipilih</p>
                     </div>
 
                     <label class="flex items-center gap-2">
-                        <input type="checkbox" x-model="formData.is_primary"
-                            class="rounded border-gray-300 text-orange-600 focus:ring-orange-500">
-                        <span class="text-xs text-gray-700">Jadikan alamat utama</span>
+                        <input type="checkbox" x-model="formData.is_primary" style="accent-color: <?= e($brand['clay']) ?>;">
+                        <span class="text-xs" style="color: <?= e($brand['ink']) ?>;">Jadikan alamat utama</span>
                     </label>
 
-                    <div x-show="error" class="p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600" x-text="error"></div>
+                    <div x-show="error" class="p-3 rounded-lg text-xs" style="background-color: #FBEAE6; color: <?= e($brand['urgent']) ?>;" x-text="error"></div>
 
                     <button type="button" @click="saveAddress()" :disabled="saving"
-                        class="w-full py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition disabled:opacity-50">
+                        class="w-full py-2.5 text-white rounded-lg text-sm font-medium transition disabled:opacity-50 focus:outline-none focus-visible:ring-2"
+                        style="background-color: <?= e($brand['clay']) ?>;">
                         <span x-show="!saving">Simpan Alamat</span>
                         <span x-show="saving">Menyimpan...</span>
                     </button>
@@ -362,13 +372,15 @@ if (! function_exists('js_attr')) {
         </div>
 
         <!-- PILIH KURIR -->
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <h2 class="font-semibold text-gray-800 mb-3 text-sm">Pilih Kurir</h2>
+        <div class="bg-white rounded-xl border p-4" style="border-color: <?= e($brand['line']) ?>;">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.15em] mb-1" style="color: <?= e($brand['moss']) ?>;">Pengiriman</p>
+            <h2 class="font-semibold mb-3 text-sm" style="color: <?= e($brand['ink']) ?>;">Pilih Kurir</h2>
 
             <button type="button"
                 @click="checkRates()"
                 :disabled="!selectedAddressId || loadingRates"
-                class="w-full py-2.5 border border-orange-600 text-orange-600 rounded-lg text-sm font-medium hover:bg-orange-50 transition disabled:opacity-40 disabled:cursor-not-allowed mb-3">
+                class="w-full py-2.5 border rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed mb-3 focus:outline-none focus-visible:ring-2"
+                style="border-color: <?= e($brand['clay']) ?>; color: <?= e($brand['clay']) ?>;">
                 <span x-show="!loadingRates">Cek Ongkir</span>
                 <span x-show="loadingRates">Menghitung ongkir...</span>
             </button>
@@ -384,49 +396,50 @@ if (! function_exists('js_attr')) {
         </div>
 
         <!-- CATATAN -->
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
-            <label class="block text-sm font-semibold text-gray-800 mb-2">Catatan (opsional)</label>
+        <div class="bg-white rounded-xl border p-4" style="border-color: <?= e($brand['line']) ?>;">
+            <label class="block text-sm font-semibold mb-2" style="color: <?= e($brand['ink']) ?>;">Catatan (opsional)</label>
             <textarea name="notes" rows="2"
                 placeholder="Catatan untuk penjual..."
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
+                class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2" style="border-color: <?= e($brand['line']) ?>;"></textarea>
         </div>
 
         <!-- TOTAL & SUBMIT -->
-        <div class="bg-white rounded-xl border border-gray-200 p-4">
+        <div class="bg-white rounded-xl border p-4" style="border-color: <?= e($brand['line']) ?>;">
             <div class="space-y-2 mb-4">
                 <div class="flex justify-between text-sm">
                     <span class="text-gray-500">Subtotal Produk</span>
-                    <span class="font-medium">Rp <?= number_format($subtotal, 0, ',', '.') ?></span>
+                    <span class="font-medium" style="color: <?= e($brand['ink']) ?>;">Rp <?= number_format($subtotal, 0, ',', '.') ?></span>
                 </div>
                 <div class="flex justify-between text-sm" x-show="selectedCourier.cost > 0">
                     <span class="text-gray-500">Ongkir (<span x-text="selectedCourier.name"></span>)</span>
-                    <span class="font-medium" x-text="'Rp ' + Number(selectedCourier.cost).toLocaleString('id-ID')"></span>
+                    <span class="font-medium" style="color: <?= e($brand['ink']) ?>;" x-text="'Rp ' + Number(selectedCourier.cost).toLocaleString('id-ID')"></span>
                 </div>
                 <div class="flex justify-between text-sm" x-show="selectedCourier.cost === 0">
                     <span class="text-gray-500">Ongkir</span>
                     <span class="text-gray-400">Pilih kurir dulu</span>
                 </div>
-                <div class="border-t pt-2 flex justify-between">
-                    <span class="font-bold text-gray-900">Total</span>
-                    <span class="font-bold text-orange-600 text-lg"
+                <div class="border-t pt-2 flex justify-between" style="border-color: <?= e($brand['line']) ?>;">
+                    <span class="font-bold" style="color: <?= e($brand['ink']) ?>;">Total</span>
+                    <span class="font-bold text-lg" style="color: <?= e($brand['clay']) ?>;"
                         x-text="'Rp ' + Number(<?= (int) $subtotal ?> + (selectedCourier.cost || 0)).toLocaleString('id-ID')">
                     </span>
                 </div>
             </div>
 
             <!-- Info pembayaran -->
-            <div class="mb-3 p-3 bg-blue-50 border border-blue-100 rounded-xl flex gap-2.5 items-start">
-                <svg class="w-4 h-4 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="mb-3 p-3 rounded-xl flex gap-2.5 items-start" style="background-color: <?= e($brand['stone']) ?>;">
+                <svg class="w-4 h-4 shrink-0 mt-0.5" fill="none" stroke="<?= e($brand['moss']) ?>" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
-                <p class="text-xs text-blue-700">
+                <p class="text-xs" style="color: <?= e($brand['ink']) ?>;">
                     Setelah checkout, kamu akan diarahkan ke halaman pembayaran iPaymu untuk memilih metode bayar (VA bank, QRIS, dan lainnya).
                 </p>
             </div>
 
             <button type="submit"
                 :disabled="!selectedAddressId || !selectedCourier.company || submitting"
-                class="w-full py-3 bg-orange-600 text-white rounded-xl font-bold text-sm hover:bg-orange-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                class="w-full py-3 text-white rounded-xl font-bold text-sm transition disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2"
+                style="background-color: <?= e($brand['clay']) ?>;">
                 <span x-show="!submitting">Lanjutkan ke Pembayaran</span>
                 <span x-show="submitting">Memproses...</span>
             </button>
@@ -453,6 +466,7 @@ function checkoutPage() {
         loadingRates: false,
         submitting:   false,
         selectedCourier: { company: '', type: '', name: '', cost: 0 },
+        _ratesController: null,
 
         init() {
             const checkedRadio = document.querySelector('input[name="address_id"]:checked');
@@ -476,8 +490,17 @@ function checkoutPage() {
             this.selectedCourier = { company: '', type: '', name: '', cost: 0 };
         },
 
+        selectCourier(company, type, name, cost) {
+            this.selectedCourier = { company, type, name, cost: parseInt(cost) || 0 };
+        },
+
         async checkRates() {
             if (! this.selectedAddressId) { alert('Pilih alamat dulu'); return; }
+
+            if (this._ratesController) {
+                this._ratesController.abort();
+            }
+            this._ratesController = new AbortController();
 
             this.loadingRates = true;
             document.getElementById('shippingRates').innerHTML =
@@ -487,6 +510,7 @@ function checkoutPage() {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                 const res = await fetch('/checkout/rates', {
                     method: 'POST',
+                    signal: this._ratesController.signal,
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'text/html',
@@ -502,26 +526,14 @@ function checkoutPage() {
                 if (window.Alpine && typeof window.Alpine.initTree === 'function') {
                     window.Alpine.initTree(ratesEl);
                 }
-
-                setTimeout(() => {
-                    const firstRadio = ratesEl.querySelector('input[name="_courier_radio"][value="0"]');
-                    if (firstRadio) {
-                        firstRadio.checked = true;
-                        firstRadio.dispatchEvent(new Event('change'));
-                        firstRadio.dispatchEvent(new Event('click'));
-                    }
-                }, 50);
             } catch (e) {
+                if (e.name === 'AbortError') return;
                 document.getElementById('shippingRates').innerHTML =
-                    '<p class="text-red-600 text-xs p-3 bg-red-50 rounded-lg">Gagal mengambil data ongkir: ' + e.message + '</p>';
+                    '<p class="text-sm p-3 rounded-lg" style="background-color: #FBEAE6; color: <?= e($brand['urgent']) ?>;">Gagal mengambil data ongkir: ' + e.message + '</p>';
             } finally {
                 this.loadingRates = false;
             }
         },
-
-        selectCourier(company, type, name, cost) {
-            this.selectedCourier = { company, type, name, cost: parseInt(cost) || 0 };
-        }
     }
 }
 

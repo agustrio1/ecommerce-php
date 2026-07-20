@@ -16,19 +16,20 @@ $metaKeywords = $product->metaKeywords ?: '';
     'og_image'         => !empty($images) ? '/storage/' . $images[0]['path'] : null,
 ]) ?>
 
-<?php $this->layout('layouts.storefront', ['title' => $title]) ?>
-
 <?php $this->section('content') ?>
+
+<?php require_once __DIR__ . '/_brand.php'; ?>
+<?php $brand = nexaroBrandTokens(); ?>
 
 <div class="py-4">
 
     <!-- Breadcrumb -->
     <nav class="flex items-center gap-1.5 text-xs text-gray-400 mb-4">
-        <a href="/" class="hover:text-orange-600 transition">Home</a>
+        <a href="/" class="hover:opacity-70 transition">Home</a>
         <span>›</span>
-        <a href="/produk" class="hover:text-orange-600 transition">Produk</a>
+        <a href="/produk" class="hover:opacity-70 transition">Produk</a>
         <span>›</span>
-        <span class="text-gray-600 line-clamp-1"><?= e($product->name) ?></span>
+        <span class="line-clamp-1" style="color: <?= e($brand['ink']) ?>;"><?= e($product->name) ?></span>
     </nav>
 
     <div x-data="productPage(<?= $product->id ?>, <?= $product->hasVariants ? 'true' : 'false' ?>)" class="lg:grid lg:grid-cols-2 lg:gap-8">
@@ -36,7 +37,7 @@ $metaKeywords = $product->metaKeywords ?: '';
         <!-- GAMBAR PRODUK -->
         <div x-data="{ activeImage: 0 }">
             <!-- Main image -->
-            <div class="aspect-square bg-gray-100 rounded-2xl overflow-hidden mb-3 relative">
+            <div class="aspect-square rounded-2xl overflow-hidden mb-3 relative" style="background-color: <?= e($brand['stone']) ?>;">
                 <?php if (!empty($images)): ?>
                     <?php foreach ($images as $i => $image): ?>
                         <img src="/storage/<?= e($image['path']) ?>"
@@ -46,14 +47,16 @@ $metaKeywords = $product->metaKeywords ?: '';
                     <?php endforeach; ?>
                 <?php else: ?>
                     <div class="w-full h-full flex items-center justify-center">
-                        <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-16 h-16 opacity-20" fill="none" stroke="<?= e($brand['ink']) ?>" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                         </svg>
                     </div>
                 <?php endif; ?>
 
                 <?php if ($product->isOnSale()): ?>
-                    <div class="absolute top-3 left-3 bg-red-500 text-white text-sm font-bold px-2 py-1 rounded-lg">
+                    <div class="absolute top-3 left-3 flex items-center gap-1 text-white text-sm font-bold pl-3 pr-2.5 py-1.5"
+                        style="background-color: <?= e($brand['clay']) ?>; clip-path: polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 55%);">
+                        <span class="w-1.5 h-1.5 rounded-full bg-white/70"></span>
                         -<?= $product->discountPercentage() ?>%
                     </div>
                 <?php endif; ?>
@@ -65,9 +68,9 @@ $metaKeywords = $product->metaKeywords ?: '';
                     <?php foreach ($images as $i => $image): ?>
                         <button type="button"
                             @click="activeImage = <?= $i ?>"
-                            :class="activeImage === <?= $i ?> ? 'border-orange-500' : 'border-transparent'"
-                            class="w-16 h-16 shrink-0 rounded-xl overflow-hidden border-2 transition">
-                            <img src="/storage/<?= e($image['path']) ?>" alt="" class="w-full h-full object-cover">
+                            :style="activeImage === <?= $i ?> ? 'border-color: <?= e($brand['ink']) ?>' : 'border-color: transparent'"
+                            class="w-16 h-16 shrink-0 rounded-xl overflow-hidden border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
+                            <img src="/storage/<?= e($image['path']) ?>" alt="Thumbnail <?= $i + 1 ?> — <?= e($product->name) ?>" class="w-full h-full object-cover">
                         </button>
                     <?php endforeach; ?>
                 </div>
@@ -76,7 +79,7 @@ $metaKeywords = $product->metaKeywords ?: '';
 
         <!-- INFO PRODUK -->
         <div class="mt-4 lg:mt-0">
-            <h1 class="text-xl font-bold text-gray-900 mb-2"><?= e($product->name) ?></h1>
+            <h1 class="text-xl font-bold mb-2" style="color: <?= e($brand['ink']) ?>;"><?= e($product->name) ?></h1>
 
             <!-- Harga -->
             <?php
@@ -91,18 +94,19 @@ $metaKeywords = $product->metaKeywords ?: '';
                 $discountPct = $product->discountPercentage();
                 $originalPrice = $product->comparePrice;
             }
+            $priceColor = $isFlashSale ? $brand['urgent'] : $brand['ink'];
             ?>
 
             <?php if ($isFlashSale): ?>
                 <div class="flex items-center gap-2 mb-2">
-                    <span class="flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs font-bold rounded-lg">
+                    <span class="flex items-center gap-1 px-2 py-1 text-white text-xs font-bold rounded-lg" style="background-color: <?= e($brand['urgent']) ?>;">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
                         </svg>
                         Flash Sale
                     </span>
                     <?php if (isset($fs['stock_limit']) && $fs['stock_limit']): ?>
-                        <span class="text-xs text-red-600">
+                        <span class="text-xs" style="color: <?= e($brand['urgent']) ?>;">
                             Sisa <?= max(0, $fs['stock_limit'] - ($fs['sold_count'] ?? 0)) ?> item
                         </span>
                     <?php endif; ?>
@@ -110,7 +114,7 @@ $metaKeywords = $product->metaKeywords ?: '';
             <?php endif; ?>
 
             <div class="flex items-baseline gap-2 mb-4">
-                <span class="text-2xl font-bold <?= $isFlashSale ? 'text-red-600' : 'text-orange-600' ?>">
+                <span class="text-2xl font-bold" style="color: <?= e($priceColor) ?>;">
                     Rp <?= number_format($displayPrice, 0, ',', '.') ?>
                 </span>
                 <?php if ($originalPrice > 0 && $originalPrice > $displayPrice): ?>
@@ -118,7 +122,7 @@ $metaKeywords = $product->metaKeywords ?: '';
                         Rp <?= number_format($originalPrice, 0, ',', '.') ?>
                     </span>
                     <?php if ($discountPct > 0): ?>
-                        <span class="text-xs font-semibold text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
+                        <span class="text-xs font-semibold px-1.5 py-0.5 rounded" style="color: <?= e($brand['clay']) ?>; background-color: <?= e($brand['stone']) ?>;">
                             -<?= $discountPct ?>%
                         </span>
                     <?php endif; ?>
@@ -144,15 +148,15 @@ $metaKeywords = $product->metaKeywords ?: '';
                 <div class="space-y-4 mb-5">
                     <?php foreach ($attrGroups as $attrName => $values): ?>
                         <div>
-                            <p class="text-sm font-semibold text-gray-700 mb-2"><?= e($attrName) ?></p>
+                            <p class="text-sm font-semibold mb-2" style="color: <?= e($brand['ink']) ?>;"><?= e($attrName) ?></p>
                             <div class="flex flex-wrap gap-2">
                                 <?php foreach ($values as $value): ?>
                                     <button type="button"
                                         @click="selectAttr('<?= e($attrName) ?>', '<?= e($value) ?>')"
-                                        :class="selected['<?= e($attrName) ?>'] === '<?= e($value) ?>'
-                                            ? 'bg-orange-600 text-white border-orange-600'
-                                            : 'bg-white text-gray-700 border-gray-300 hover:border-orange-400'"
-                                        class="px-4 py-2 border rounded-lg text-sm font-medium transition">
+                                        :style="selected['<?= e($attrName) ?>'] === '<?= e($value) ?>'
+                                            ? 'background-color: <?= e($brand['ink']) ?>; color: #fff; border-color: <?= e($brand['ink']) ?>;'
+                                            : 'background-color: #fff; color: <?= e($brand['ink']) ?>; border-color: <?= e($brand['line']) ?>;'"
+                                        class="px-4 py-2 border rounded-lg text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
                                         <?= e($value) ?>
                                     </button>
                                 <?php endforeach; ?>
@@ -162,12 +166,12 @@ $metaKeywords = $product->metaKeywords ?: '';
                 </div>
 
                 <p class="text-sm text-gray-500 mb-4">
-                    Stok: <span class="font-semibold text-gray-900" x-text="selectedStock !== null ? selectedStock : '—'"></span>
+                    Stok: <span class="font-semibold" style="color: <?= e($brand['ink']) ?>;" x-text="selectedStock !== null ? selectedStock : '—'"></span>
                 </p>
             <?php else: ?>
                 <?php $defaultVariant = $variants[0] ?? null; ?>
                 <p class="text-sm text-gray-500 mb-4">
-                    Stok: <span class="font-semibold text-gray-900"><?= $defaultVariant ? (int)$defaultVariant['stock'] : 0 ?></span>
+                    Stok: <span class="font-semibold" style="color: <?= e($brand['ink']) ?>;"><?= $defaultVariant ? (int)$defaultVariant['stock'] : 0 ?></span>
                 </p>
             <?php endif; ?>
 
@@ -183,8 +187,11 @@ $metaKeywords = $product->metaKeywords ?: '';
             <div x-data="wishlistBtn(<?= $product->id ?>, <?= $isWishlisted ? 'true' : 'false' ?>)" class="mb-3">
                 <button @click="toggle()"
                     :disabled="loading"
-                    :class="wishlisted ? 'bg-red-50 text-red-600 border-red-300' : 'bg-gray-50 text-gray-600 border-gray-300'"
-                    class="w-full py-2.5 border rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50">
+                    :aria-pressed="wishlisted"
+                    :style="wishlisted
+                        ? 'background-color: #FBEAE6; color: <?= e($brand['urgent']) ?>; border-color: <?= e($brand['urgent']) ?>;'
+                        : 'background-color: <?= e($brand['stone']) ?>; color: <?= e($brand['ink']) ?>; border-color: <?= e($brand['line']) ?>;'"
+                    class="w-full py-2.5 border rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2">
                     <svg class="w-4 h-4" :fill="wishlisted ? 'currentColor' : 'none'" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
                     </svg>
@@ -197,12 +204,14 @@ $metaKeywords = $product->metaKeywords ?: '';
                 <button type="button"
                     @click="addToCart()"
                     :disabled="loading"
-                    class="flex-1 py-3 bg-orange-600 text-white rounded-xl font-semibold hover:bg-orange-700 active:bg-orange-800 transition text-sm disabled:opacity-50">
+                    class="flex-1 py-3 text-white rounded-xl font-semibold transition text-sm disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    style="background-color: <?= e($brand['ink']) ?>;">
                     <span x-show="!loading">+ Keranjang</span>
                     <span x-show="loading">Menambahkan...</span>
                 </button>
                 <a href="/checkout"
-                    class="flex-1 py-3 bg-orange-50 text-orange-600 border border-orange-300 rounded-xl font-semibold hover:bg-orange-100 transition text-sm text-center">
+                    class="flex-1 py-3 border rounded-xl font-semibold transition text-sm text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                    style="background-color: <?= e($brand['stone']) ?>; color: <?= e($brand['clay']) ?>; border-color: <?= e($brand['clay']) ?>;">
                     Beli Sekarang
                 </a>
             </div>
@@ -210,29 +219,31 @@ $metaKeywords = $product->metaKeywords ?: '';
             <!-- Toast -->
             <div x-show="toast"
                 x-transition
-                :class="toastSuccess ? 'bg-green-600' : 'bg-red-600'"
+                role="status"
+                aria-live="polite"
+                :style="toastSuccess ? 'background-color: <?= e($brand['ink']) ?>' : 'background-color: <?= e($brand['urgent']) ?>'"
                 class="fixed bottom-24 left-4 right-4 text-white text-sm px-4 py-3 rounded-xl shadow-lg z-50 text-center"
                 x-text="toastMsg">
             </div>
 
             <!-- Info pengiriman -->
-            <div class="border border-gray-100 rounded-xl p-4 space-y-2.5">
+            <div class="border rounded-xl p-4 space-y-2.5" style="border-color: <?= e($brand['line']) ?>;">
                 <div class="flex items-center gap-3 text-sm text-gray-600">
-                    <svg class="w-4 h-4 text-orange-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="<?= e($brand['clay']) ?>" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/>
                     </svg>
-                    <span>Berat: <strong><?= $product->weight ? number_format($product->weight) . ' gram' : 'Tidak diketahui' ?></strong></span>
+                    <span>Berat: <strong style="color: <?= e($brand['ink']) ?>;"><?= $product->weight ? number_format($product->weight) . ' gram' : 'Tidak diketahui' ?></strong></span>
                 </div>
                 <?php if ($product->length > 0): ?>
                     <div class="flex items-center gap-3 text-sm text-gray-600">
-                        <svg class="w-4 h-4 text-orange-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="<?= e($brand['clay']) ?>" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
                         </svg>
-                        <span>Dimensi: <strong><?= $product->length ?> × <?= $product->width ?> × <?= $product->height ?> cm</strong></span>
+                        <span>Dimensi: <strong style="color: <?= e($brand['ink']) ?>;"><?= $product->length ?> × <?= $product->width ?> × <?= $product->height ?> cm</strong></span>
                     </div>
                 <?php endif; ?>
                 <div class="flex items-center gap-3 text-sm text-gray-600">
-                    <svg class="w-4 h-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="<?= e($brand['moss']) ?>" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                     </svg>
                     <span>Pengiriman via Biteship — ongkir dihitung saat checkout</span>
@@ -243,15 +254,16 @@ $metaKeywords = $product->metaKeywords ?: '';
 
     <!-- DESKRIPSI LENGKAP -->
     <?php if ($product->description): ?>
-        <div class="mt-8 bg-white rounded-2xl border border-gray-100 p-5">
-            <h2 class="font-bold text-gray-900 mb-3">Deskripsi Produk</h2>
+        <div class="mt-8 bg-white rounded-xl border p-5" style="border-color: <?= e($brand['line']) ?>;">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.15em] mb-1" style="color: <?= e($brand['moss']) ?>;">Detail</p>
+            <h2 class="font-bold mb-3" style="color: <?= e($brand['ink']) ?>;">Deskripsi Produk</h2>
             <div class="text-sm text-gray-700 leading-relaxed prose prose-sm max-w-none
                         [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-2
                         [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mb-2
                         [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mb-1
                         [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2
-                        [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
-                        [&_blockquote]:border-l-4 [&_blockquote]:border-orange-400 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-gray-500">
+                        [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2"
+                style="--tw-prose-quote-borders: <?= e($brand['clay']) ?>;">
                 <?= $product->description ?>
             </div>
         </div>
@@ -261,7 +273,6 @@ $metaKeywords = $product->metaKeywords ?: '';
 <script>
 function productPage(productId, hasVariants) {
     return {
-        // — variant state —
         productId,
         hasVariants,
         selected: {},
@@ -273,14 +284,8 @@ function productPage(productId, hasVariants) {
             'attrs' => array_map(fn($av) => ['attr' => $av['attribute'], 'value' => $av['value']], $v['attribute_values']),
         ], $variants)) ?>,
 
-        // — flash sale state —
-        // Kalau produk ini lagi flash sale & stoknya belum habis, harga ini
-        // (harga diskon) yang WAJIB dikirim ke /cart/add, bukan harga normal
-        // produk. Kalau tidak flash sale (atau stok habis), nilainya null,
-        // dan addToCart() otomatis fallback ke harga normal.
         flashSalePrice: <?= ($isFlashSale ?? false) ? json_encode($fs['sale_price']) : 'null' ?>,
 
-        // — cart state —
         loading: false,
         toast: false,
         toastSuccess: true,
@@ -288,7 +293,6 @@ function productPage(productId, hasVariants) {
         csrfToken: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
 
         init() {
-            // Untuk produk tanpa varian, langsung set selectedVariantId dari variant pertama
             if (!this.hasVariants && this.variants.length > 0) {
                 this.selectedVariantId = this.variants[0].id;
             }
@@ -338,11 +342,6 @@ function productPage(productId, hasVariants) {
                         product_id: this.productId,
                         variant_id: this.selectedVariantId,
                         quantity: 1,
-                        // Kirim harga flash sale kalau ada, biar backend tau
-                        // harga yang harus dipakai untuk item ini bukan harga
-                        // normal produk. Backend WAJIB tetap validasi ulang
-                        // harga ini (jangan percaya mentah-mentah dari client),
-                        // ini cuma "hint" harga mana yang berlaku.
                         price_override: this.flashSalePrice,
                     }),
                 });
@@ -355,7 +354,6 @@ function productPage(productId, hasVariants) {
 
                 this.showToast(data.message ?? 'Terjadi kesalahan.', data.success ?? false);
 
-                // Dispatch ke bottom nav badge
                 if (data.success) {
                     window.dispatchEvent(new CustomEvent('cart-updated', {
                         detail: { count: data.count }
@@ -417,7 +415,6 @@ function wishlistBtn(productId, initialState) {
 
                 if (data.success) {
                     this.wishlisted = data.added;
-                    // Update badge di bottom nav
                     window.dispatchEvent(new CustomEvent('wishlist-updated', {
                         detail: { count: data.count }
                     }));
@@ -440,13 +437,14 @@ $reviewService = new \App\Modules\Review\Application\Services\ReviewService();
 $reviewSummary = $reviewService->getSummary($product->id);
 $productReviews = $reviewService->getByProduct($product->id, 1, 10);
 ?>
-<div class="mt-8 bg-white rounded-2xl border border-gray-100 p-5">
-    <h2 class="font-bold text-gray-900 mb-4">Ulasan Pembeli</h2>
+<div class="mt-8 bg-white rounded-xl border p-5" style="border-color: <?= e($brand['line']) ?>;">
+    <p class="text-[11px] font-semibold uppercase tracking-[0.15em] mb-1" style="color: <?= e($brand['moss']) ?>;">Kata Pembeli</p>
+    <h2 class="font-bold mb-4" style="color: <?= e($brand['ink']) ?>;">Ulasan Pembeli</h2>
 
     <?php if ($reviewSummary['total'] > 0): ?>
-        <div class="flex items-center gap-6 mb-5 pb-5 border-b border-gray-100">
+        <div class="flex items-center gap-6 mb-5 pb-5 border-b" style="border-color: <?= e($brand['line']) ?>;">
             <div class="text-center shrink-0">
-                <p class="text-3xl font-bold text-gray-900"><?= $reviewSummary['average'] ?></p>
+                <p class="text-3xl font-bold" style="color: <?= e($brand['ink']) ?>;"><?= $reviewSummary['average'] ?></p>
                 <div class="flex text-amber-400 text-sm">
                     <?php for ($i = 1; $i <= 5; $i++): ?>
                         <span><?= $i <= round($reviewSummary['average']) ? '★' : '☆' ?></span>
@@ -462,7 +460,7 @@ $productReviews = $reviewService->getByProduct($product->id, 1, 10);
                     ?>
                     <div class="flex items-center gap-2 text-xs">
                         <span class="text-gray-500 w-3"><?= $star ?></span>
-                        <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="flex-1 h-1.5 rounded-full overflow-hidden" style="background-color: <?= e($brand['stone']) ?>;">
                             <div class="h-full bg-amber-400" style="width: <?= $pct ?>%"></div>
                         </div>
                         <span class="text-gray-400 w-6 text-right"><?= $count ?></span>
@@ -473,13 +471,13 @@ $productReviews = $reviewService->getByProduct($product->id, 1, 10);
 
         <div class="space-y-4">
             <?php foreach ($productReviews as $review): ?>
-                <div class="border-b border-gray-50 pb-4 last:border-0">
+                <div class="border-b pb-4 last:border-0" style="border-color: <?= e($brand['line']) ?>;">
                     <div class="flex items-center gap-2 mb-1.5">
-                        <div class="w-7 h-7 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
-                            <span class="text-orange-700 font-bold text-xs"><?= strtoupper(substr($review['user_name'], 0, 1)) ?></span>
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style="background-color: <?= e($brand['stone']) ?>;">
+                            <span class="font-bold text-xs" style="color: <?= e($brand['ink']) ?>;"><?= strtoupper(substr($review['user_name'], 0, 1)) ?></span>
                         </div>
                         <div>
-                            <p class="text-xs font-medium text-gray-800"><?= e($review['user_name']) ?></p>
+                            <p class="text-xs font-medium" style="color: <?= e($brand['ink']) ?>;"><?= e($review['user_name']) ?></p>
                             <div class="flex text-amber-400 text-xs">
                                 <?php for ($i = 1; $i <= 5; $i++): ?>
                                     <span><?= $i <= $review['rating'] ? '★' : '☆' ?></span>
@@ -494,7 +492,7 @@ $productReviews = $reviewService->getByProduct($product->id, 1, 10);
                     <?php if (! empty($review['images'])): ?>
                         <div class="flex gap-2 mt-2">
                             <?php foreach ($review['images'] as $imgPath): ?>
-                                <img src="/storage/<?= e($imgPath) ?>" class="w-14 h-14 object-cover rounded-lg border border-gray-100">
+                                <img src="/storage/<?= e($imgPath) ?>" alt="Foto ulasan dari <?= e($review['user_name']) ?>" class="w-14 h-14 object-cover rounded-lg border" style="border-color: <?= e($brand['line']) ?>;">
                             <?php endforeach; ?>
                         </div>
                     <?php endif; ?>
